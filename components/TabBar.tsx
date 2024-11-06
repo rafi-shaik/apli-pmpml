@@ -1,23 +1,70 @@
-import TabBarImage from "./TabBarImage";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ImageSourcePropType,
+  Image,
+  Dimensions,
+  Animated,
+  TouchableOpacity,
+} from "react-native";
+import { useEffect, useRef } from "react";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import { View, Text, TouchableOpacity, StyleSheet, } from "react-native";
 
 import { icons } from "@/constants";
 
+const SCREEN_WIDTH = Dimensions.get("window").width;
+const TAB_WIDTH = SCREEN_WIDTH / 3; // For 3 tabs
+
+const TabBarImage = ({
+  icon,
+  isFocused,
+}: {
+  icon: ImageSourcePropType;
+  isFocused: boolean;
+}) => {
+  return (
+    <Image
+      source={icon}
+      style={[
+        styles.tabIcon,
+        { tintColor: isFocused ? "black" : "#838383" },
+        isFocused && styles.focusedIcon,
+      ]}
+      resizeMode="contain"
+    />
+  );
+};
+
 const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
+  const slideAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.spring(slideAnim, {
+      toValue: state.index * TAB_WIDTH,
+      useNativeDriver: true,
+      tension: 120,
+      friction: 8,
+    }).start();
+  }, [state.index, slideAnim]);
+
   const iconImage = {
-    index: (props: any) => <TabBarImage icon={icons.home} props={props} />,
-    "near-by": (props: any) => (
-      <TabBarImage icon={icons.marker} props={props} />
+    index: (isFocused: boolean) => (
+      <TabBarImage icon={icons.home} isFocused={isFocused} />
     ),
-    metro: (props: any) => <TabBarImage icon={icons.train} props={props} />,
-    complaint: (props: any) => (
-      <TabBarImage icon={icons.complaint} props={props} />
+    buses: (isFocused: boolean) => (
+      <TabBarImage icon={icons.marker} isFocused={isFocused} />
+    ),
+    help: (isFocused: boolean) => (
+      <TabBarImage icon={icons.question} isFocused={isFocused} />
     ),
   };
 
   return (
-    <View style={styles.tabBar}>
+    <View style={styles.container}>
+      <Animated.View
+        style={[styles.slider, { transform: [{ translateX: slideAnim }] }]}
+      />
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
         const label =
@@ -44,47 +91,69 @@ const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
         return (
           <TouchableOpacity
             key={route.name}
-            accessibilityRole="button"
-            accessibilityState={isFocused ? { selected: true } : {}}
-            accessibilityLabel={options.tabBarAccessibilityLabel}
-            testID={options.tabBarTestID}
             onPress={onPress}
-            style={styles.tabBarItem}
+            style={styles.tabItem}
           >
-            {iconImage[route.name]({
-              isFocused,
-            })}
-            <Text
-              className={`${
-                isFocused ? "text-black scale-110" : "text-[#838383"
-              }`}
-            >
-              {label}
-            </Text>
+            <View style={styles.tabContent}>
+              {iconImage[route.name as keyof typeof iconImage]?.(isFocused)}
+              <Text style={[styles.tabLabel, isFocused && styles.focusedLabel]}>
+                {label}
+              </Text>
+            </View>
           </TouchableOpacity>
         );
       })}
     </View>
   );
 };
-
 export default TabBar;
 
 const styles = StyleSheet.create({
-  tabBar: {
-    position: "absolute",
+  container: {
     flexDirection: "row",
-    bottom: 0,
     justifyContent: "space-around",
     alignItems: "center",
+    borderTopWidth: 1,
+    borderTopColor: "#e0e0e0",
     backgroundColor: "white",
-    borderTopColor: "#838383",
-    paddingVertical: 10,
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
-  tabBarItem: {
+  tabItem: {
+    width: TAB_WIDTH,
+    height: 60,
+    overflow: "hidden",
+  },
+  tabContent: {
     flex: 1,
-    justifyContent: "center",
     alignItems: "center",
-    gap: 5,
+    justifyContent: "center",
+    borderRadius: 10000,
+  },
+  tabIcon: {
+    width: 22,
+    height: 22,
+  },
+  focusedIcon: {
+    transform: [{ scale: 1.1 }],
+  },
+  tabLabel: {
+    fontSize: 14,
+    marginTop: 4,
+    color: "#838383",
+  },
+  focusedLabel: {
+    color: "black",
+    fontWeight: 500,
+  },
+  slider: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: TAB_WIDTH,
+    height: 3,
+    backgroundColor: "#3fa1ae",
   },
 });
