@@ -17,7 +17,11 @@ const IconCard = ({
   return (
     <View style={styles.outerContainer}>
       <View style={styles.imageContainer}>
-        <Image source={icon} style={styles.image} resizeMode="contain" />
+        <Image
+          source={icon}
+          resizeMode="contain"
+          style={styles.image}
+        />
       </View>
       <Text style={styles.text}>{label}</Text>
     </View>
@@ -46,8 +50,8 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   image: {
-    width: 22,
-    height: 22,
+    width: 30,
+    height: 30,
   },
   text: {
     textAlign: "center",

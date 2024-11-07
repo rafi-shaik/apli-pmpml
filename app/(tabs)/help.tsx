@@ -44,49 +44,88 @@ const faqData: FAQSection[] = [
         answer:
           "Currently, 1200 buses are trackable in the Apli PMPML app. Additional buses are being added daily and all buses will be trackable soon",
       },
-      { question: "What is the frequency of location updates?", answer: "" },
-      { question: "Why is no bus showing on the app in my area?", answer: "" },
+      {
+        question: "What is the frequency of location updates?",
+        answer: "Location updates occur every 10 to 30 seconds.",
+      },
+      {
+        question: "Why is no bus showing on the app in my area?",
+        answer:
+          "The buses in your area might not have GPS devices configured yet. They will be configured soon, and buses will then be visible in the app.",
+      },
     ],
   },
   {
     title: "Pass",
     items: [
-      { question: "Can I book a pass in advance?", answer: "" },
+      {
+        question: "Can I book a pass in advance?",
+        answer: "Yes, passes can be generated in advance.",
+      },
       {
         question:
           "My transaction is completed, but the pass is still showing as pending. What should I do?",
-        answer: "",
+        answer:
+          "Due to payment delays, passes may take up to 3 minutes to generate. Please wait for 3 minutes before attempting to book a new pass.",
       },
       {
         question:
           "It has been 3 minutes, and the pass is still showing as pending. What now?",
-        answer: "",
+        answer:
+          "If the pass is still pending after 3 minutes, please purchase a new pass either online or from the conductor. If the previous payment was debited, it will be refunded to your bank account within 24-48 hours.",
       },
       {
         question: "A pass older than 1 day is still showing as pending.",
-        answer: "",
+        answer:
+          "This pass has been refunded. Please check your bank statement for the refund.",
       },
       {
         question:
           "How can I confirm if I received a refund for my pending pass?",
-        answer: "",
+        answer:
+          "Refunds are automatically processed within 24-48 hours if the pass was not generated. Please check your bank account statement to verify the refund.",
+      },
+      {
+        question: "What is the validity of a ticket?",
+        answer: "The answer to this question is not provided in the image.",
       },
     ],
   },
   {
     title: "Tickets",
     items: [
-      { question: "What is the validity of a ticket?", answer: "" },
-      { question: "Can I book a ticket in advance?", answer: "" },
       {
-        question:
-          "My transaction is completed, but the ticket is still showing as pending. What should I do?",
-        answer: "",
+        question: "What is the validity of a ticket?",
+        answer:
+          "Ticket validity is based on the fare amount:\n- Up to ₹15: Valid for 30 minutes\n- ₹25: Valid for 60 minutes\n- ₹45: Valid for 120 minutes\n- ₹65: Valid for 180 minutes",
+      },
+      {
+        question: "Can I book a ticket in advance?",
+        answer:
+          "No, tickets are activated immediately upon purchase. Advance ticket booking is not available.",
       },
       {
         question:
-          "It has been 3 minutes, and the ticket is still showing as pending.",
-        answer: "",
+          "My transaction is completed, but the ticket is still showing as pending. What should I do?",
+        answer:
+          "Due to payment delays, tickets may take up to 3 minutes to generate. Please wait for 3 minutes before attempting to book a new ticket.",
+      },
+      {
+        question:
+          "It has been 3 minutes, and the ticket is still showing as pending. What now?",
+        answer:
+          "If the ticket is still pending after 3 minutes, please purchase a new ticket either online or from the conductor. If the previous payment was debited, it will be refunded to your bank account within 24-48 hours.",
+      },
+      {
+        question: "A ticket older than 1 day is still showing as pending.",
+        answer:
+          "This ticket has been refunded. Please check your bank statement for the refund.",
+      },
+      {
+        question:
+          "How can I confirm if I received a refund for my pending ticket?",
+        answer:
+          "Refunds are automatically processed within 24-48 hours if the ticket was not generated. Please check your bank account statement to verify the refund.",
       },
     ],
   },
@@ -109,7 +148,7 @@ const FAQItem = ({
       >
         <Text style={styles.questionText}>• {question}</Text>
         {isExpanded ? (
-          <AntDesign name="minuscircle" size={18} color="red" />
+          <AntDesign name="minuscircle" size={18} color="#c4443b" />
         ) : (
           <AntDesign name="pluscircle" size={18} color="#666666" />
         )}
@@ -193,11 +232,11 @@ const styles = StyleSheet.create({
     color: "black",
     fontWeight: 700,
     paddingRight: 30,
-    lineHeight:20
+    lineHeight: 20,
   },
 
   questionText: {
-    fontSize: 16,
+    fontSize: 17,
     color: "black",
     flex: 1,
     paddingRight: 10,
@@ -210,13 +249,12 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     paddingHorizontal: 15,
     paddingVertical: 10,
-    // borderTopWidth: 1,
-    // borderTopColor: "#f0f0f0",
   },
   buttonText: {
     textAlign: "center",
     color: "#000000",
-    fontSize: 14,
+    fontSize: 15,
     marginBottom: 8,
+    fontWeight:500
   },
 });

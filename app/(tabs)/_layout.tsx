@@ -23,6 +23,7 @@ export default function TabLayout() {
         name="buses"
         options={{
           title: "Buses",
+          headerShown: false,
         }}
       />
       <Tabs.Screen

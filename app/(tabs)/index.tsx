@@ -1,24 +1,24 @@
 import React from "react";
+import MapView from "react-native-maps";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { icons } from "@/constants";
+import { icons, images } from "@/constants";
 import IconCard from "@/components/IconCard";
-import MapView from "react-native-maps";
 
 const HomePage = () => {
   return (
     <SafeAreaView style={styles.root}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View style={styles.cardContainer}>
-          <IconCard icon={icons.homeFilled} label="Home" />
-          <IconCard icon={icons.homeFilled} label="Home" />
+          <IconCard icon={icons.blackTicket} label="Bus Ticket" />
+          <IconCard icon={icons.idCard} label="Daily Pass" />
         </View>
         <View style={styles.cardContainer}>
-          <IconCard icon={icons.homeFilled} label="Home" />
-          <IconCard icon={icons.homeFilled} label="Home" />
-          <IconCard icon={icons.homeFilled} label="Home" />
-          <IconCard icon={icons.homeFilled} label="Home" />
+          <IconCard icon={icons.colorTicket} label="View Ticket" />
+          <IconCard icon={icons.colorTicket} label="View Pass" />
+          <IconCard icon={icons.routes} label="Route Time Table" />
+          <IconCard icon={images.puneMetro} label="Metro Ticket" />
         </View>
 
         <View style={styles.mapContainer}>
@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
   },
   cardContainer: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: 15,
     marginBottom: 25,
   },
