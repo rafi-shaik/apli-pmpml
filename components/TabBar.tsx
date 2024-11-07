@@ -50,13 +50,22 @@ const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
 
   const iconImage = {
     index: (isFocused: boolean) => (
-      <TabBarImage icon={icons.home} isFocused={isFocused} />
+      <TabBarImage
+        icon={isFocused ? icons.homeFilled : icons.homeOutline}
+        isFocused={isFocused}
+      />
     ),
     buses: (isFocused: boolean) => (
-      <TabBarImage icon={icons.marker} isFocused={isFocused} />
+      <TabBarImage
+        icon={isFocused ? icons.markerFilled : icons.markerOutline}
+        isFocused={isFocused}
+      />
     ),
     help: (isFocused: boolean) => (
-      <TabBarImage icon={icons.question} isFocused={isFocused} />
+      <TabBarImage
+        icon={isFocused ? icons.questionFilled : icons.questionOutline}
+        isFocused={isFocused}
+      />
     ),
   };
 
@@ -120,6 +129,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+    height:60
   },
   tabItem: {
     width: TAB_WIDTH,
@@ -130,7 +140,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 10000,
   },
   tabIcon: {
     width: 22,
@@ -153,7 +162,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     width: TAB_WIDTH,
-    height: 3,
+    height: 2,
     backgroundColor: "#3fa1ae",
   },
 });

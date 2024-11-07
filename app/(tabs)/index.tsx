@@ -11,14 +11,14 @@ const HomePage = () => {
     <SafeAreaView style={styles.root}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View style={styles.cardContainer}>
-          <IconCard icon={icons.home} label="Home" />
-          <IconCard icon={icons.home} label="Home" />
+          <IconCard icon={icons.homeFilled} label="Home" />
+          <IconCard icon={icons.homeFilled} label="Home" />
         </View>
         <View style={styles.cardContainer}>
-          <IconCard icon={icons.home} label="Home" />
-          <IconCard icon={icons.home} label="Home" />
-          <IconCard icon={icons.home} label="Home" />
-          <IconCard icon={icons.home} label="Home" />
+          <IconCard icon={icons.homeFilled} label="Home" />
+          <IconCard icon={icons.homeFilled} label="Home" />
+          <IconCard icon={icons.homeFilled} label="Home" />
+          <IconCard icon={icons.homeFilled} label="Home" />
         </View>
 
         <View style={styles.mapContainer}>

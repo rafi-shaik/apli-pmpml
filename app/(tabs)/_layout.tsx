@@ -1,10 +1,9 @@
 import React from "react";
 import { Tabs } from "expo-router";
-import { Header } from "@react-navigation/elements";
-
-import TabBar from "@/components/TabBar";
 import { Image } from "react-native";
+
 import { images } from "@/constants";
+import TabBar from "@/components/TabBar";
 
 export default function TabLayout() {
   return (
@@ -32,7 +31,7 @@ export default function TabLayout() {
           title: "FAQs",
           headerStyle: {
             borderBottomWidth: 2,
-            borderBottomColor: "#03fc0b",
+            borderBottomColor: "#8BC34A",
           },
         }}
       />
