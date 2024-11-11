@@ -186,7 +186,13 @@ const ComplaintsPage = () => {
         <Text style={styles.buttonText}>
           Can't find what you're looking for?
         </Text>
-        <CustomButton onPress={() => {}}>Raise New Complaint</CustomButton>
+        <CustomButton
+          onPress={() => {}}
+          buttonBgColor="#219652"
+          buttonTextStyles={{ color: "white", fontSize: 18, fontWeight: 500 }}
+        >
+          Raise New Complaint
+        </CustomButton>
       </View>
     </SafeAreaView>
   );
@@ -255,6 +261,6 @@ const styles = StyleSheet.create({
     color: "#000000",
     fontSize: 15,
     marginBottom: 8,
-    fontWeight:500
+    fontWeight: 500,
   },
 });
