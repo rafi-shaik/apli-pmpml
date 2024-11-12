@@ -1,5 +1,6 @@
 import routes from "@/assets/icons/routes.png";
 import idCard from "@/assets/icons/pass_id.png";
+import mapCenter from "@/assets/icons/map_center.png";
 import homeFilled from "@/assets/icons/home_filled.png";
 import blackTicket from "@/assets/icons/black_ticket.png";
 import colorTicket from "@/assets/icons/color_ticket.png";
@@ -23,6 +24,7 @@ export const icons = {
   colorTicket,
   idCard,
   routes,
+  mapCenter,
 };
 
 export const images = {
