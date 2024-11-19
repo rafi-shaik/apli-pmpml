@@ -12,22 +12,15 @@ import { useLocationStore } from "@/store";
 
 const PermissionsPage = () => {
   const router = useRouter();
-  const {
-    setLocation,
-    setIsLocationGranted,
-    isLocationGranted,
-    loadLocationData,
-  } = useLocationStore();
+
+  const { setIsLocationGranted, isLocationGranted, checkLocationAccess } =
+    useLocationStore();
 
   const [permissionStatus, setPermissionStatus] =
     useState<Location.PermissionStatus | null>(null);
 
-  useEffect(() => {
-    checkLocationPermission();
-  }, []);
-
   const checkLocationPermission = async () => {
-    await loadLocationData();
+    await checkLocationAccess();
 
     if (isLocationGranted === "granted") {
       router.replace("/(tabs)");
@@ -39,9 +32,6 @@ const PermissionsPage = () => {
 
     if (status === Location.PermissionStatus.GRANTED) {
       setIsLocationGranted("granted");
-      let { coords } = await Location.getCurrentPositionAsync();
-      const { latitude, longitude } = coords;
-      setLocation(latitude, longitude);
       router.replace("/(tabs)");
     }
   };
@@ -96,7 +86,7 @@ const PermissionsPage = () => {
               buttonTextStyles={{
                 color: "white",
                 fontSize: 14,
-                fontWeight: 700,
+                fontWeight: "700",
               }}
             >
               GRANT PERMISSION
@@ -121,7 +111,7 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: 20,
-    fontWeight: 500,
+    fontWeight: "500",
     color: "black",
   },
   description: {

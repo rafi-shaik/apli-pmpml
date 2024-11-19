@@ -1,8 +1,10 @@
+import Toast from "react-native-root-toast";
 import { useFocusEffect } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import React, { useCallback, useEffect, useRef, useState } from "react";
 import DeviceInfo from "react-native-device-info";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
 import {
   Animated,
   Image,
@@ -11,17 +13,22 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
 
+import { icons } from "@/constants";
 import { useLocationStore } from "@/store";
 import { fetchNearByBuses } from "@/lib/api";
-import { icons } from "@/constants";
+
+import GreenBusIcon from "@/components/svgs/GreenBusIcon";
+import WhiteBusIcon from "@/components/svgs/WhiteBusIcon";
 
 interface BusData {
+  ac: string;
   id: string;
   lat: string;
   lon: string;
+  orientation: number;
   timestamp: number;
+  route_id: string;
 }
 
 const BusesPage = () => {
@@ -59,7 +66,7 @@ const BusesPage = () => {
   const shouldFetch =
     Boolean(region?.latitude && region?.longitude) && isFocused;
 
-  const { data: buses } = useQuery({
+  const { data: buses, error } = useQuery({
     queryKey: ["nearby-buses-data", region?.latitude, region?.longitude],
     queryFn: () => fetchNearByBuses(region?.latitude!, region?.longitude!),
     enabled: shouldFetch,
@@ -78,22 +85,33 @@ const BusesPage = () => {
   );
 
   useEffect(() => {
+    if (error) {
+      Toast.show("No buses available at this time. Please try again.", {
+        duration: Toast.durations.SHORT,
+        position: -70,
+        backgroundColor: "#000000B3",
+        textColor: "#fff",
+      });
+    }
+  }, [error]);
+
+  useEffect(() => {
     if (buses) {
       buses.forEach((bus: BusData) => {
         if (!animatedMarkers.current[bus.id]) {
           animatedMarkers.current[bus.id] = {
-            latitude: new Animated.Value(+bus.lat),
-            longitude: new Animated.Value(+bus.lon),
+            latitude: new Animated.Value(parseFloat(bus.lat)),
+            longitude: new Animated.Value(parseFloat(bus.lon)),
           };
         } else {
           Animated.parallel([
             Animated.timing(animatedMarkers.current[bus.id].latitude, {
-              toValue: +bus.lat,
+              toValue: parseFloat(bus.lat),
               duration: 5000,
               useNativeDriver: false,
             }),
             Animated.timing(animatedMarkers.current[bus.id].longitude, {
-              toValue: +bus.lon,
+              toValue: parseFloat(bus.lon),
               duration: 5000,
               useNativeDriver: false,
             }),
@@ -109,6 +127,31 @@ const BusesPage = () => {
     }
   };
 
+  const renderBusMarkers = () => {
+    return buses?.map((bus: BusData) => {
+      return (
+        <Marker.Animated
+          key={bus.id}
+          coordinate={{
+            latitude:
+              animatedMarkers.current[bus.id]?.latitude || parseFloat(bus.lat),
+            longitude:
+              animatedMarkers.current[bus.id]?.longitude || parseFloat(bus.lon),
+          }}
+          rotation={bus.orientation}
+        >
+          {bus.ac === "nac" ? (
+            <GreenBusIcon title={bus.route_id} />
+          ) : (
+            <WhiteBusIcon title={bus.route_id} />
+          )}
+        </Marker.Animated>
+      );
+    });
+  };
+
+  console.log(buses?.slice(0, 1));
+
   return (
     <View style={styles.root}>
       <MapView
@@ -119,18 +162,9 @@ const BusesPage = () => {
         showsUserLocation={true}
         showsMyLocationButton={false}
         onRegionChangeComplete={setRegion}
+        showsCompass={false}
       >
-        {buses?.map((bus: BusData) => (
-          <Marker.Animated
-            key={bus.id}
-            coordinate={{
-              latitude: animatedMarkers.current[bus.id]?.latitude || +bus.lat,
-              longitude: animatedMarkers.current[bus.id]?.longitude || +bus.lon,
-            }}
-          >
-            {/* <FontAwesome name="bus" size={24} color="blue" /> */}
-          </Marker.Animated>
-        ))}
+        {renderBusMarkers()}
       </MapView>
       <View style={styles.searchContainer}>
         <FontAwesome name="search" size={20} color="black" />
@@ -163,7 +197,7 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     position: "absolute",
-    top: 50,
+    top: 30,
     left: 20,
     right: 20,
     backgroundColor: "white",

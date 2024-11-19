@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
   mainTitle: {
     color: "white",
     fontSize: 45,
-    fontWeight: 300,
+    fontWeight: "300",
     letterSpacing: 3,
     paddingLeft: 15,
   },

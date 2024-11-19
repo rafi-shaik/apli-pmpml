@@ -189,7 +189,7 @@ const ComplaintsPage = () => {
         <CustomButton
           onPress={() => {}}
           buttonBgColor="#219652"
-          buttonTextStyles={{ color: "white", fontSize: 18, fontWeight: 500 }}
+          buttonTextStyles={{ color: "white", fontSize: 18, fontWeight: "500" }}
         >
           Raise New Complaint
         </CustomButton>
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 700,
+    fontWeight: "700",
     color: "#8BC34A",
   },
   faqItem: {
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   answerText: {
     fontSize: 14,
     color: "black",
-    fontWeight: 700,
+    fontWeight: "700",
     paddingRight: 30,
     lineHeight: 20,
   },
@@ -261,6 +261,6 @@ const styles = StyleSheet.create({
     color: "#000000",
     fontSize: 15,
     marginBottom: 8,
-    fontWeight: 500,
+    fontWeight: "500",
   },
 });

@@ -1,30 +1,39 @@
+import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Redirect, useRouter } from "expo-router";
 
 import { useLocationStore } from "@/store";
+import { ActivityIndicator, View } from "react-native";
 
 const Home = () => {
   const router = useRouter();
-  const { isLocationGranted, location } = useLocationStore();
-  const [isAppReady, setIsAppReady] = useState<boolean | undefined>();
+  const { isLocationGranted, checkLocationAccess } =
+    useLocationStore();
+
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (isLocationGranted && location) {
-      setIsAppReady(true);
-    } else if (!isLocationGranted) {
-      setIsAppReady(false);
+    const loadData = async () => {
+      await checkLocationAccess();
+      setIsLoading(false);
+    };
+    loadData();
+  }, [checkLocationAccess]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (isLocationGranted) {
+        router.replace("/(tabs)");
+      } else if (!isLocationGranted) {
+        router.replace("/permissions");
+      }
     }
-  }, [isLocationGranted, location, router]);
+  }, [isLoading, isLocationGranted, router]);
 
-  if (isAppReady) {
-    return <Redirect href="/(tabs)" />;
-  }
-
-  if (!isAppReady) {
-    return <Redirect href="/permissions" />;
-  }
-
-  return null;
+  return (
+    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <ActivityIndicator size="large" />
+    </View>
+  );
 };
 
 export default Home;

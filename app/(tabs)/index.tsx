@@ -1,12 +1,27 @@
-import React from "react";
+import React, { useEffect } from "react";
 import MapView from "react-native-maps";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import * as Location from "expo-location";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 
+import { useLocationStore } from "@/store";
 import { icons, images } from "@/constants";
 import IconCard from "@/components/IconCard";
 
 const HomePage = () => {
+  const { setLocation } = useLocationStore();
+
+  const getCurrentLocation = async () => {
+    let { coords } = await Location.getCurrentPositionAsync();
+
+    const { latitude, longitude } = coords;
+    setLocation(latitude, longitude);
+  };
+
+  useEffect(() => {
+    getCurrentLocation();
+  }, []);
+
   return (
     <SafeAreaView style={styles.root}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
@@ -36,6 +51,7 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     paddingHorizontal: 15,
+    paddingTop: 20,
   },
   cardContainer: {
     flexDirection: "row",
@@ -56,6 +72,6 @@ const styles = StyleSheet.create({
   },
   mapHeading: {
     fontSize: 18,
-    fontWeight: 500,
+    fontWeight: "500",
   },
 });

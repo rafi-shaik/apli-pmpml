@@ -8,7 +8,6 @@ export const fetchFunction = async (url: string, options: any = {}) => {
       },
     };
     const mergedOptions = { ...defaultOptions, ...options };
-
     const response = await fetch(url, mergedOptions);
 
     if (!response.ok) {
@@ -18,7 +17,6 @@ export const fetchFunction = async (url: string, options: any = {}) => {
 
     return await response.json();
   } catch (error: any) {
-    console.error("Fetch error:", error.message);
-    throw error;
+    throw new Error(error.message);
   }
 };

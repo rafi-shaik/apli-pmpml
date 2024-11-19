@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
   },
   focusedLabel: {
     color: "black",
-    fontWeight: 500,
+    fontWeight: "500",
   },
   slider: {
     position: "absolute",

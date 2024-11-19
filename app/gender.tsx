@@ -19,7 +19,7 @@ const GenderPage = () => {
             buttonTextStyles={{
               color: "white",
               fontSize: 14,
-              fontWeight: 700,
+              fontWeight: "700",
             }}
           >
             SET GENDER

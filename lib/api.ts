@@ -21,7 +21,6 @@ export const fetchNearByBuses = async (
     const buses = response.data;
     return buses;
   } catch (error: any) {
-    console.error("Failed to fetch buses:", error.message);
     throw error;
   }
 };
