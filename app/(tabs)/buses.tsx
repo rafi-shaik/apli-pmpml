@@ -2,12 +2,14 @@ import Toast from "react-native-root-toast";
 import { useFocusEffect } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import DeviceInfo from "react-native-device-info";
+import AntDesign from "@expo/vector-icons/AntDesign";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
 import {
   Animated,
   Image,
+  Pressable,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -21,7 +23,7 @@ import { fetchNearByBuses } from "@/lib/api";
 import GreenBusIcon from "@/components/svgs/GreenBusIcon";
 import WhiteBusIcon from "@/components/svgs/WhiteBusIcon";
 
-interface BusData {
+export interface BusData {
   ac: string;
   id: string;
   lat: string;
@@ -42,9 +44,11 @@ const BusesPage = () => {
     longitudeDelta: 0.0421,
   };
 
-  const [region, setRegion] = useState(initialRegion);
   const [isFocused, setIsFocused] = useState(false);
+  const [region, setRegion] = useState(initialRegion);
+  const [isInputFocused, setIsInputFocused] = useState(false);
 
+  const inputRef = useRef<TextInput>(null);
   const mapRef = useRef<MapView>(null);
   const animatedMarkers = useRef<{
     [key: string]: { latitude: Animated.Value; longitude: Animated.Value };
@@ -139,6 +143,7 @@ const BusesPage = () => {
               animatedMarkers.current[bus.id]?.longitude || parseFloat(bus.lon),
           }}
           rotation={bus.orientation}
+          tracksViewChanges={false}
         >
           {bus.ac === "nac" ? (
             <GreenBusIcon title={bus.route_id} />
@@ -150,37 +155,76 @@ const BusesPage = () => {
     });
   };
 
-  console.log(buses?.slice(0, 1));
+  const renderMarkers = () => {
+    return buses?.map((bus: BusData) => {
+      return (
+        <Marker
+          key={bus.id}
+          coordinate={{
+            latitude: parseFloat(bus.lat),
+            longitude: parseFloat(bus.lon),
+          }}
+          rotation={bus.orientation}
+          tracksViewChanges={false}
+        >
+          {bus.ac === "nac" ? (
+            <GreenBusIcon title={bus.route_id} />
+          ) : (
+            <WhiteBusIcon title={bus.route_id} />
+          )}
+        </Marker>
+      );
+    });
+  };
+
+  const handleBlur = () => {
+    inputRef.current?.blur();
+    setIsInputFocused(false);
+  };
 
   return (
     <View style={styles.root}>
-      <MapView
-        ref={mapRef}
-        style={styles.map}
-        provider={PROVIDER_DEFAULT}
-        initialRegion={initialRegion}
-        showsUserLocation={true}
-        showsMyLocationButton={false}
-        onRegionChangeComplete={setRegion}
-        showsCompass={false}
-      >
-        {renderBusMarkers()}
-      </MapView>
+      {!isInputFocused && (
+        <>
+          <MapView
+            ref={mapRef}
+            style={styles.map}
+            provider={PROVIDER_DEFAULT}
+            initialRegion={initialRegion}
+            showsUserLocation={true}
+            showsMyLocationButton={false}
+            showsCompass={false}
+            loadingEnabled={true}
+            onRegionChangeComplete={setRegion}
+          >
+            {renderBusMarkers()}
+          </MapView>
+          <TouchableOpacity style={styles.mapCenter} onPress={handleCenterMap}>
+            <Image
+              source={icons.mapCenter}
+              resizeMode="contain"
+              style={styles.centerIcon}
+            />
+          </TouchableOpacity>
+        </>
+      )}
+
       <View style={styles.searchContainer}>
-        <FontAwesome name="search" size={20} color="black" />
+        {isInputFocused ? (
+          <Pressable onPress={handleBlur}>
+            <AntDesign name="arrowleft" size={20} color="black" />
+          </Pressable>
+        ) : (
+          <FontAwesome name="search" size={20} color="black" />
+        )}
         <TextInput
           style={styles.input}
           placeholder="Enter Route"
           placeholderTextColor="#666"
+          ref={inputRef}
+          onFocus={() => setIsInputFocused(true)}
         />
       </View>
-      <TouchableOpacity style={styles.mapCenter} onPress={handleCenterMap}>
-        <Image
-          source={icons.mapCenter}
-          resizeMode="contain"
-          style={styles.centerIcon}
-        />
-      </TouchableOpacity>
     </View>
   );
 };

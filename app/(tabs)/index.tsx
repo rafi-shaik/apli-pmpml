@@ -1,15 +1,23 @@
-import React, { useEffect } from "react";
-import MapView from "react-native-maps";
 import * as Location from "expo-location";
+import { useFocusEffect } from "expo-router";
+import { useQuery } from "@tanstack/react-query";
+import MapView, { Marker } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
+import React, { useCallback, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { useLocationStore } from "@/store";
 import { icons, images } from "@/constants";
+import { fetchNearByBuses } from "@/lib/api";
+
+import { BusData } from "./buses";
 import IconCard from "@/components/IconCard";
+import GreenBusIcon from "@/components/svgs/GreenBusIcon";
+import WhiteBusIcon from "@/components/svgs/WhiteBusIcon";
 
 const HomePage = () => {
-  const { setLocation } = useLocationStore();
+  const { setLocation, location } = useLocationStore();
+  const [isFocused, setIsFocused] = useState(false);
 
   const getCurrentLocation = async () => {
     let { coords } = await Location.getCurrentPositionAsync();
@@ -17,6 +25,27 @@ const HomePage = () => {
     const { latitude, longitude } = coords;
     setLocation(latitude, longitude);
   };
+
+  const shouldFetch =
+    Boolean(location?.latitude && location?.longitude) && isFocused;
+
+  const { data: buses, error } = useQuery({
+    queryKey: ["nearby-buses-data", location?.latitude, location?.longitude],
+    queryFn: () => fetchNearByBuses(location?.latitude!, location?.longitude!),
+    enabled: shouldFetch,
+    retry: false,
+    refetchInterval: 5000,
+  });
+
+  useFocusEffect(
+    useCallback(() => {
+      setIsFocused(true);
+
+      return () => {
+        setIsFocused(false);
+      };
+    }, [])
+  );
 
   useEffect(() => {
     getCurrentLocation();
@@ -38,7 +67,44 @@ const HomePage = () => {
 
         <View style={styles.mapContainer}>
           <Text style={styles.mapHeading}>Nearby</Text>
-          <MapView style={styles.map} />
+          {location && (
+            <MapView
+              style={styles.map}
+              zoomEnabled={false}
+              scrollEnabled={false}
+              rotateEnabled={false}
+              pitchEnabled={false}
+              showsUserLocation={true}
+              showsMyLocationButton={false}
+              loadingEnabled={true}
+              initialRegion={{
+                latitude: location?.latitude!,
+                longitude: location?.longitude!,
+                latitudeDelta: 0.0734,
+                longitudeDelta: 0.0855,
+              }}
+            >
+              {buses?.map((bus: BusData) => {
+                return (
+                  <Marker
+                    key={bus.id}
+                    coordinate={{
+                      latitude: parseFloat(bus.lat),
+                      longitude: parseFloat(bus.lon),
+                    }}
+                    rotation={bus.orientation}
+                    tracksViewChanges={false}
+                  >
+                    {bus.ac === "nac" ? (
+                      <GreenBusIcon title={bus.route_id} />
+                    ) : (
+                      <WhiteBusIcon title={bus.route_id} />
+                    )}
+                  </Marker>
+                );
+              })}
+            </MapView>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

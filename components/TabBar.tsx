@@ -7,8 +7,9 @@ import {
   Dimensions,
   Animated,
   TouchableOpacity,
+  Keyboard,
 } from "react-native";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 
 import { icons } from "@/constants";
@@ -38,6 +39,24 @@ const TabBarImage = ({
 
 const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
   const slideAnim = useRef(new Animated.Value(0)).current;
+
+  const [isVisibleKeyboard, setIsVisibleKeyboard] = useState<
+    boolean | undefined
+  >();
+
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener("keyboardDidShow", () => {
+      setIsVisibleKeyboard(true);
+    });
+    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+      setIsVisibleKeyboard(false);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   useEffect(() => {
     Animated.spring(slideAnim, {
@@ -70,49 +89,53 @@ const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
   };
 
   return (
-    <View style={styles.container}>
-      <Animated.View
-        style={[styles.slider, { transform: [{ translateX: slideAnim }] }]}
-      />
-      {state.routes.map((route, index) => {
-        const { options } = descriptors[route.key];
-        const label =
-          options.tabBarLabel !== undefined
-            ? options.tabBarLabel
-            : options.title !== undefined
-            ? options.title
-            : route.name;
+    !isVisibleKeyboard && (
+      <View style={styles.container}>
+        <Animated.View
+          style={[styles.slider, { transform: [{ translateX: slideAnim }] }]}
+        />
+        {state.routes.map((route, index) => {
+          const { options } = descriptors[route.key];
+          const label =
+            options.tabBarLabel !== undefined
+              ? options.tabBarLabel
+              : options.title !== undefined
+              ? options.title
+              : route.name;
 
-        const isFocused = state.index === index;
+          const isFocused = state.index === index;
 
-        const onPress = () => {
-          const event = navigation.emit({
-            type: "tabPress",
-            target: route.key,
-            canPreventDefault: true,
-          });
+          const onPress = () => {
+            const event = navigation.emit({
+              type: "tabPress",
+              target: route.key,
+              canPreventDefault: true,
+            });
 
-          if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name, route.params);
-          }
-        };
+            if (!isFocused && !event.defaultPrevented) {
+              navigation.navigate(route.name, route.params);
+            }
+          };
 
-        return (
-          <TouchableOpacity
-            key={route.name}
-            onPress={onPress}
-            style={styles.tabItem}
-          >
-            <View style={styles.tabContent}>
-              {iconImage[route.name as keyof typeof iconImage]?.(isFocused)}
-              <Text style={[styles.tabLabel, isFocused && styles.focusedLabel]}>
-                {label}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
+          return (
+            <TouchableOpacity
+              key={route.name}
+              onPress={onPress}
+              style={styles.tabItem}
+            >
+              <View style={styles.tabContent}>
+                {iconImage[route.name as keyof typeof iconImage]?.(isFocused)}
+                <Text
+                  style={[styles.tabLabel, isFocused && styles.focusedLabel]}
+                >
+                  {label}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    )
   );
 };
 export default TabBar;
@@ -129,7 +152,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height:60
+    height: 60,
   },
   tabItem: {
     width: TAB_WIDTH,
