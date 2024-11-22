@@ -5,12 +5,14 @@ import DeviceInfo from "react-native-device-info";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
+import MapView, { Marker, PROVIDER_DEFAULT, Region } from "react-native-maps";
 import {
   Animated,
+  FlatList,
   Image,
   Pressable,
   StyleSheet,
+  Text,
   TextInput,
   TouchableOpacity,
   View,
@@ -18,7 +20,9 @@ import {
 
 import { icons } from "@/constants";
 import { useLocationStore } from "@/store";
-import { fetchNearByBuses } from "@/lib/api";
+import useDebounce from "@/lib/hooks/useDebounce";
+import { calculateDistance, trimRouteName } from "@/lib/utils";
+import { fetchBusesOnRoute, fetchNearByBuses } from "@/lib/api";
 
 import GreenBusIcon from "@/components/svgs/GreenBusIcon";
 import WhiteBusIcon from "@/components/svgs/WhiteBusIcon";
@@ -28,9 +32,10 @@ export interface BusData {
   id: string;
   lat: string;
   lon: string;
-  orientation: number;
-  timestamp: number;
+  route: string;
   route_id: string;
+  timestamp: number;
+  orientation: number;
 }
 
 const BusesPage = () => {
@@ -44,6 +49,7 @@ const BusesPage = () => {
     longitudeDelta: 0.0421,
   };
 
+  const [routeInput, setRouteInput] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [region, setRegion] = useState(initialRegion);
   const [isInputFocused, setIsInputFocused] = useState(false);
@@ -53,6 +59,8 @@ const BusesPage = () => {
   const animatedMarkers = useRef<{
     [key: string]: { latitude: Animated.Value; longitude: Animated.Value };
   }>({});
+
+  const debouncedSearch = useDebounce(routeInput);
 
   // useFocusEffect(() => {
   //   const getDeviceId = async () => {
@@ -78,9 +86,25 @@ const BusesPage = () => {
     refetchInterval: 5000,
   });
 
+  const { data: routeBuses } = useQuery({
+    queryKey: ["route-buses", debouncedSearch],
+    queryFn: () => fetchBusesOnRoute(debouncedSearch!),
+    enabled: !!debouncedSearch,
+    retry: false,
+  });
+
+  // console.log(routeBuses);
+
+  const textsArray = Array.from({ length: 100 }, (_, index) => ({
+    id: index,
+    text: "Mock string",
+  }));
+
   useFocusEffect(
     useCallback(() => {
       setIsFocused(true);
+      mapRef?.current!.animateToRegion(initialRegion, 1000);
+      setRegion(initialRegion);
 
       return () => {
         setIsFocused(false);
@@ -128,11 +152,14 @@ const BusesPage = () => {
   const handleCenterMap = () => {
     if (mapRef.current) {
       mapRef.current.animateToRegion(initialRegion, 1000);
+      setRegion(initialRegion);
     }
   };
 
   const renderBusMarkers = () => {
     return buses?.map((bus: BusData) => {
+      const { route } = bus;
+      const modifiedRoute = trimRouteName(route);
       return (
         <Marker.Animated
           key={bus.id}
@@ -146,33 +173,11 @@ const BusesPage = () => {
           tracksViewChanges={false}
         >
           {bus.ac === "nac" ? (
-            <GreenBusIcon title={bus.route_id} />
+            <GreenBusIcon title={modifiedRoute!} />
           ) : (
-            <WhiteBusIcon title={bus.route_id} />
+            <WhiteBusIcon title={modifiedRoute!} />
           )}
         </Marker.Animated>
-      );
-    });
-  };
-
-  const renderMarkers = () => {
-    return buses?.map((bus: BusData) => {
-      return (
-        <Marker
-          key={bus.id}
-          coordinate={{
-            latitude: parseFloat(bus.lat),
-            longitude: parseFloat(bus.lon),
-          }}
-          rotation={bus.orientation}
-          tracksViewChanges={false}
-        >
-          {bus.ac === "nac" ? (
-            <GreenBusIcon title={bus.route_id} />
-          ) : (
-            <WhiteBusIcon title={bus.route_id} />
-          )}
-        </Marker>
       );
     });
   };
@@ -180,6 +185,19 @@ const BusesPage = () => {
   const handleBlur = () => {
     inputRef.current?.blur();
     setIsInputFocused(false);
+  };
+
+  const handleRegionChange = (newRegion: Region) => {
+    const distance = calculateDistance(
+      initialRegion.latitude,
+      initialRegion.longitude,
+      newRegion.latitude,
+      newRegion.longitude
+    );
+
+    if (distance > 2) {
+      setRegion(newRegion);
+    }
   };
 
   return (
@@ -195,7 +213,7 @@ const BusesPage = () => {
             showsMyLocationButton={false}
             showsCompass={false}
             loadingEnabled={true}
-            onRegionChangeComplete={setRegion}
+            onRegionChangeComplete={handleRegionChange}
           >
             {renderBusMarkers()}
           </MapView>
@@ -211,20 +229,39 @@ const BusesPage = () => {
 
       <View style={styles.searchContainer}>
         {isInputFocused ? (
-          <Pressable onPress={handleBlur}>
+          <Pressable onPress={handleBlur} style={styles.searchIcon}>
             <AntDesign name="arrowleft" size={20} color="black" />
           </Pressable>
         ) : (
-          <FontAwesome name="search" size={20} color="black" />
+          <View style={styles.searchIcon}>
+            <FontAwesome name="search" size={20} color="black" />
+          </View>
         )}
         <TextInput
+          ref={inputRef}
+          value={routeInput}
           style={styles.input}
           placeholder="Enter Route"
           placeholderTextColor="#666"
-          ref={inputRef}
+          onChangeText={setRouteInput}
           onFocus={() => setIsInputFocused(true)}
         />
+        {routeInput && (
+          <Pressable onPress={() => setRouteInput("")}>
+            <AntDesign name="close" size={20} color="black" />
+          </Pressable>
+        )}
       </View>
+
+      {isInputFocused && (
+        <View style={styles.list}>
+          <FlatList
+            data={textsArray}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={(itemData) => <Text>{itemData.item.text}</Text>}
+          />
+        </View>
+      )}
     </View>
   );
 };
@@ -241,15 +278,14 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     position: "absolute",
-    top: 30,
+    top: 50,
     left: 20,
     right: 20,
     backgroundColor: "white",
     borderRadius: 25,
     flexDirection: "row",
     alignItems: "center",
-    gap: 15,
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
     elevation: 5,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -257,7 +293,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   searchIcon: {
-    marginRight: 10,
+    width: "12%",
   },
   input: {
     flex: 1,
@@ -281,5 +317,10 @@ const styles = StyleSheet.create({
   centerIcon: {
     width: 21,
     height: 21,
+  },
+  list: {
+    position: "relative",
+    top: 120,
+    paddingHorizontal: 20,
   },
 });

@@ -31,3 +31,5 @@ export const images = {
   pmpml,
   puneMetro,
 };
+
+export const routeNameReplacements = ["_UP", "_DOWN", "DN", "UP", "DOWN", "(-)", "(+)"];

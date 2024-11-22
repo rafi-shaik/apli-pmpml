@@ -8,6 +8,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { useLocationStore } from "@/store";
 import { icons, images } from "@/constants";
+import { trimRouteName } from "@/lib/utils";
 import { fetchNearByBuses } from "@/lib/api";
 
 import { BusData } from "./buses";
@@ -21,7 +22,6 @@ const HomePage = () => {
 
   const getCurrentLocation = async () => {
     let { coords } = await Location.getCurrentPositionAsync();
-
     const { latitude, longitude } = coords;
     setLocation(latitude, longitude);
   };
@@ -33,8 +33,8 @@ const HomePage = () => {
     queryKey: ["nearby-buses-data", location?.latitude, location?.longitude],
     queryFn: () => fetchNearByBuses(location?.latitude!, location?.longitude!),
     enabled: shouldFetch,
-    retry: false,
     refetchInterval: 5000,
+    retry: false,
   });
 
   useFocusEffect(
@@ -50,6 +50,30 @@ const HomePage = () => {
   useEffect(() => {
     getCurrentLocation();
   }, []);
+
+  const renderBusMarkers = () => {
+    return buses?.map((bus: BusData) => {
+      const { route } = bus;
+      const modifiedRoute = trimRouteName(route);
+      return (
+        <Marker
+          key={bus.id}
+          coordinate={{
+            latitude: parseFloat(bus.lat),
+            longitude: parseFloat(bus.lon),
+          }}
+          rotation={bus.orientation}
+          tracksViewChanges={false}
+        >
+          {bus.ac === "nac" ? (
+            <GreenBusIcon title={modifiedRoute!} />
+          ) : (
+            <WhiteBusIcon title={modifiedRoute!} />
+          )}
+        </Marker>
+      );
+    });
+  };
 
   return (
     <SafeAreaView style={styles.root}>
@@ -84,25 +108,7 @@ const HomePage = () => {
                 longitudeDelta: 0.0855,
               }}
             >
-              {buses?.map((bus: BusData) => {
-                return (
-                  <Marker
-                    key={bus.id}
-                    coordinate={{
-                      latitude: parseFloat(bus.lat),
-                      longitude: parseFloat(bus.lon),
-                    }}
-                    rotation={bus.orientation}
-                    tracksViewChanges={false}
-                  >
-                    {bus.ac === "nac" ? (
-                      <GreenBusIcon title={bus.route_id} />
-                    ) : (
-                      <WhiteBusIcon title={bus.route_id} />
-                    )}
-                  </Marker>
-                );
-              })}
+              {renderBusMarkers()}
             </MapView>
           )}
         </View>

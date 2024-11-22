@@ -24,3 +24,20 @@ export const fetchNearByBuses = async (
     throw error;
   }
 };
+
+export const fetchBusesOnRoute = async (route: string) => {
+  const url = `${process.env.EXPO_PUBLIC_API_BASE_URL}/buses-on-route`;
+
+  const options = {
+    method: "POST",
+    body: JSON.stringify({ route_long_name: route }),
+  };
+
+  try {
+    const response = await fetchFunction(url, options);
+    const buses = response.data;
+    return buses;
+  } catch (error: any) {
+    throw error;
+  }
+};

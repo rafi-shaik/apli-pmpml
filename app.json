@@ -38,11 +38,12 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow Apli PMPML to use your location."
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
     },
-    "newArchEnabled": true
+    "newArchEnabled": false
   }
 }
