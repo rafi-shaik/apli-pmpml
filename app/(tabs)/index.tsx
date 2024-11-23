@@ -29,7 +29,7 @@ const HomePage = () => {
   const shouldFetch =
     Boolean(location?.latitude && location?.longitude) && isFocused;
 
-  const { data: buses, error } = useQuery({
+  const { data: buses } = useQuery({
     queryKey: ["nearby-buses-data", location?.latitude, location?.longitude],
     queryFn: () => fetchNearByBuses(location?.latitude!, location?.longitude!),
     enabled: shouldFetch,
