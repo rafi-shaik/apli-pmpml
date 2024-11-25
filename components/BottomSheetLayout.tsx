@@ -4,19 +4,23 @@ import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 
 const BottomSheetLayout = ({
   snapPoints,
+  index = -1,
   children,
   bottomSheetRef,
+  sheetClose = true,
 }: {
+  index?: number;
   snapPoints: string[];
   children: React.ReactNode;
+  sheetClose?: boolean;
   bottomSheetRef: React.Ref<BottomSheet>;
 }) => {
   return (
     <BottomSheet
-      index={-1}
+      index={index}
       ref={bottomSheetRef}
       snapPoints={snapPoints}
-      enablePanDownToClose={true}
+      enablePanDownToClose={sheetClose}
       handleStyle={{ paddingTop: 18 }}
       handleIndicatorStyle={styles.indicatorStyle}
     >

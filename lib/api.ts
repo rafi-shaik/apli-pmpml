@@ -41,3 +41,30 @@ export const fetchBusesOnRoute = async (route: string) => {
     throw error;
   }
 };
+
+export const fetchNearbyBusStops = async (lat: number, lon: number) => {
+  const url = `${process.env.EXPO_PUBLIC_ROUTES_API_BASE_URL}/nearby_stops?user_lat=${lat}&user_lon=${lon}`;
+
+  try {
+    const options = {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": "test",
+      },
+    };
+
+    const response = await fetch(url, options);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Request failed");
+    }
+
+    const res = await response.json();
+    return res.stops;
+    return response;
+  } catch (error: any) {
+    throw error;
+  }
+};

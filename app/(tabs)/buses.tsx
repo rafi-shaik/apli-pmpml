@@ -31,9 +31,10 @@ import { icons } from "@/constants";
 import { useLocationStore } from "@/store";
 import useDebounce from "@/lib/hooks/useDebounce";
 import { calculateDistance, trimRouteName } from "@/lib/utils";
-import { fetchNearByBuses } from "@/lib/api";
+import { fetchNearByBuses, fetchNearbyBusStops } from "@/lib/api";
 
 import BusIcon from "@/components/svgs/BusIcon";
+import BusStop from "@/components/svgs/BusStop";
 import GreenBusIcon from "@/components/svgs/GreenBusIcon";
 import WhiteBusIcon from "@/components/svgs/WhiteBusIcon";
 import BottomSheetLayout from "@/components/BottomSheetLayout";
@@ -48,6 +49,14 @@ export interface BusData {
   route_desc: string;
   timestamp: number;
   orientation: number;
+}
+
+export interface BusStop {
+  id: string;
+  lat: number;
+  lng: number;
+  name: string;
+  next_stop: string;
 }
 
 const stops = [
@@ -247,6 +256,7 @@ const BusesPage = () => {
   const [region, setRegion] = useState(initialRegion);
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [selectedBus, setSelectedBus] = useState<BusData | undefined>();
+  const [selectedBusStop, setSelectedBusStop] = useState<BusStop | undefined>();
 
   const mapRef = useRef<MapView>(null);
   const inputRef = useRef<TextInput>(null);
@@ -281,6 +291,13 @@ const BusesPage = () => {
     enabled: shouldFetch,
     retry: false,
     refetchInterval: 5000,
+  });
+
+  const { data: busStops } = useQuery({
+    queryKey: ["nearby-bus-stops", region?.latitude, region?.longitude],
+    queryFn: () => fetchNearbyBusStops(region?.latitude!, region?.longitude!),
+    enabled: shouldFetch,
+    retry: false,
   });
 
   const textsArray = Array.from({ length: 100 }, (_, index) => ({
@@ -375,6 +392,27 @@ const BusesPage = () => {
     });
   };
 
+  const renderBusStopMarkers = () => {
+    return busStops?.map((stop: BusStop) => {
+      return (
+        <Marker
+          key={stop.id}
+          coordinate={{
+            latitude: stop.lat,
+            longitude: stop.lng,
+          }}
+          tracksViewChanges={false}
+          onPress={() => {
+            setSelectedBusStop(stop);
+            bottomSheetRef.current?.snapToIndex(0);
+          }}
+        >
+          <BusStop />
+        </Marker>
+      );
+    });
+  };
+
   const handleBlur = () => {
     inputRef.current?.blur();
     setIsInputFocused(false);
@@ -411,6 +449,7 @@ const BusesPage = () => {
                 onRegionChangeComplete={handleRegionChange}
               >
                 {renderBusMarkers()}
+                {renderBusStopMarkers()}
               </MapView>
               <TouchableOpacity
                 style={styles.mapCenter}
