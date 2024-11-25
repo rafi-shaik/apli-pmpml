@@ -9,13 +9,7 @@ import Svg, {
 } from "react-native-svg";
 
 const WhiteBusIcon = ({ title }: { title: string }) => (
-  <Svg
-    xmlns="http://www.w3.org/2000/svg"
-    width={35}
-    height={20}
-    viewBox="0 0 40 20"
-    fill="none"
-  >
+  <Svg width={35} height={20} viewBox="0 0 40 20" fill="none">
     <Path
       fill="#000"
       d="M34 19a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1h7ZM10 19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1h7ZM34 1a1 1 0 0 0-1-1h-5a1 1 0 0 0-1 1h7ZM10 1a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1h7Z"

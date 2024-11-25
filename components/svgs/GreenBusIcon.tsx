@@ -1,11 +1,9 @@
 import * as React from "react";
-import { View } from "react-native";
 import Svg, { Path, Defs, LinearGradient, Stop, Text } from "react-native-svg";
 
 const GreenBusIcon = ({ title }: { title: string }) => {
   return (
     <Svg
-      xmlns="http://www.w3.org/2000/svg"
       width={35}
       height={20}
       viewBox="0 0 40 20"

@@ -1,11 +1,20 @@
 import Toast from "react-native-root-toast";
-import { useFocusEffect } from "expo-router";
+import BottomSheet from "@gorhom/bottom-sheet";
 import { useQuery } from "@tanstack/react-query";
 import DeviceInfo from "react-native-device-info";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Link, useFocusEffect, useRouter } from "expo-router";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import MapView, { Marker, PROVIDER_DEFAULT, Region } from "react-native-maps";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Animated,
   FlatList,
@@ -22,25 +31,209 @@ import { icons } from "@/constants";
 import { useLocationStore } from "@/store";
 import useDebounce from "@/lib/hooks/useDebounce";
 import { calculateDistance, trimRouteName } from "@/lib/utils";
-import { fetchBusesOnRoute, fetchNearByBuses } from "@/lib/api";
+import { fetchNearByBuses } from "@/lib/api";
 
+import BusIcon from "@/components/svgs/BusIcon";
 import GreenBusIcon from "@/components/svgs/GreenBusIcon";
 import WhiteBusIcon from "@/components/svgs/WhiteBusIcon";
+import BottomSheetLayout from "@/components/BottomSheetLayout";
 
 export interface BusData {
   ac: string;
   id: string;
+  agency: string;
   lat: string;
   lon: string;
   route: string;
-  route_id: string;
+  route_desc: string;
   timestamp: number;
   orientation: number;
 }
 
+const stops = [
+  {
+    stop: "Simla Office",
+    time: "11:16",
+  },
+  {
+    stop: "Mhasoba Gate",
+    time: "11:18",
+  },
+  {
+    stop: "Pumping Station",
+    time: "11:19",
+  },
+  {
+    stop: "Mafatlal Bungalow",
+    time: "11:20",
+  },
+  {
+    stop: "Rangehills Corner",
+    time: "11:21",
+  },
+  {
+    stop: "Pune Vidhyapeeth Gate Aundh Road",
+    time: "11:24",
+  },
+  {
+    stop: "Bal Kalyan Sanstha",
+    time: "11:26",
+  },
+  {
+    stop: "Gol Market Aundh Road",
+    time: "11:27",
+  },
+  {
+    stop: "Kasturba Gandhi Vasahat",
+    time: "11:29",
+  },
+  {
+    stop: "Sindh Colony Aundh Road",
+    time: "11:31",
+  },
+  {
+    stop: "Bremen Chowk",
+    time: "11:32",
+  },
+  {
+    stop: "Bodygate",
+    time: "11:34",
+  },
+  {
+    stop: "Aundhgaon",
+    time: "11:35",
+  },
+  {
+    stop: "Br Gholap Vidyalay",
+    time: "11:38",
+  },
+  {
+    stop: "Navi Sangvi",
+    time: "11:39",
+  },
+  {
+    stop: "Panyachi Taki Navi Sangvi",
+    time: "11:40",
+  },
+  {
+    stop: "Sai Chowk Navi Sangvi",
+    time: "11:41",
+  },
+  {
+    stop: "Simla Office",
+    time: "11:16",
+  },
+  {
+    stop: "Mhasoba Gate",
+    time: "11:18",
+  },
+  {
+    stop: "Pumping Station",
+    time: "11:19",
+  },
+  {
+    stop: "Mafatlal Bungalow",
+    time: "11:20",
+  },
+  {
+    stop: "Rangehills Corner",
+    time: "11:21",
+  },
+  {
+    stop: "Pune Vidhyapeeth Gate Aundh Road",
+    time: "11:24",
+  },
+  {
+    stop: "Bal Kalyan Sanstha",
+    time: "11:26",
+  },
+  {
+    stop: "Gol Market Aundh Road",
+    time: "11:27",
+  },
+  {
+    stop: "Kasturba Gandhi Vasahat",
+    time: "11:29",
+  },
+  {
+    stop: "Simla Office",
+    time: "11:16",
+  },
+  {
+    stop: "Mhasoba Gate",
+    time: "11:18",
+  },
+  {
+    stop: "Pumping Station",
+    time: "11:19",
+  },
+  {
+    stop: "Mafatlal Bungalow",
+    time: "11:20",
+  },
+  {
+    stop: "Rangehills Corner",
+    time: "11:21",
+  },
+  {
+    stop: "Pune Vidhyapeeth Gate Aundh Road",
+    time: "11:24",
+  },
+  {
+    stop: "Bal Kalyan Sanstha",
+    time: "11:26",
+  },
+  {
+    stop: "Gol Market Aundh Road",
+    time: "11:27",
+  },
+  {
+    stop: "Kasturba Gandhi Vasahat",
+    time: "11:29",
+  },
+  {
+    stop: "Simla Office",
+    time: "11:16",
+  },
+  {
+    stop: "Mhasoba Gate",
+    time: "11:18",
+  },
+  {
+    stop: "Pumping Station",
+    time: "11:19",
+  },
+  {
+    stop: "Mafatlal Bungalow",
+    time: "11:20",
+  },
+  {
+    stop: "Rangehills Corner",
+    time: "11:21",
+  },
+  {
+    stop: "Pune Vidhyapeeth Gate Aundh Road",
+    time: "11:24",
+  },
+  {
+    stop: "Bal Kalyan Sanstha",
+    time: "11:26",
+  },
+  {
+    stop: "Gol Market Aundh Road",
+    time: "11:27",
+  },
+  {
+    stop: "Kasturba Gandhi Vasahat",
+    time: "11:29",
+  },
+];
+
 const BusesPage = () => {
   const { location } = useLocationStore();
   // const [deviceId, setDeviceId] = useState("");
+
+  const router = useRouter();
 
   const initialRegion = {
     latitude: location?.latitude!,
@@ -53,12 +246,16 @@ const BusesPage = () => {
   const [isFocused, setIsFocused] = useState(false);
   const [region, setRegion] = useState(initialRegion);
   const [isInputFocused, setIsInputFocused] = useState(false);
+  const [selectedBus, setSelectedBus] = useState<BusData | undefined>();
 
-  const inputRef = useRef<TextInput>(null);
   const mapRef = useRef<MapView>(null);
+  const inputRef = useRef<TextInput>(null);
+  const bottomSheetRef = useRef<BottomSheet>(null);
   const animatedMarkers = useRef<{
     [key: string]: { latitude: Animated.Value; longitude: Animated.Value };
   }>({});
+
+  const snapPoints = useMemo(() => ["50%", "97%"], []);
 
   const debouncedSearch = useDebounce(routeInput);
 
@@ -86,15 +283,6 @@ const BusesPage = () => {
     refetchInterval: 5000,
   });
 
-  const { data: routeBuses } = useQuery({
-    queryKey: ["route-buses", debouncedSearch],
-    queryFn: () => fetchBusesOnRoute(debouncedSearch!),
-    enabled: !!debouncedSearch,
-    retry: false,
-  });
-
-  // console.log(routeBuses);
-
   const textsArray = Array.from({ length: 100 }, (_, index) => ({
     id: index,
     text: "Mock string",
@@ -108,6 +296,7 @@ const BusesPage = () => {
 
       return () => {
         setIsFocused(false);
+        bottomSheetRef.current?.close();
       };
     }, [])
   );
@@ -171,6 +360,10 @@ const BusesPage = () => {
           }}
           rotation={bus.orientation}
           tracksViewChanges={false}
+          onPress={() => {
+            setSelectedBus(bus);
+            bottomSheetRef.current?.snapToIndex(0);
+          }}
         >
           {bus.ac === "nac" ? (
             <GreenBusIcon title={modifiedRoute!} />
@@ -201,68 +394,112 @@ const BusesPage = () => {
   };
 
   return (
-    <View style={styles.root}>
-      {!isInputFocused && (
-        <>
-          <MapView
-            ref={mapRef}
-            style={styles.map}
-            provider={PROVIDER_DEFAULT}
-            initialRegion={initialRegion}
-            showsUserLocation={true}
-            showsMyLocationButton={false}
-            showsCompass={false}
-            loadingEnabled={true}
-            onRegionChangeComplete={handleRegionChange}
-          >
-            {renderBusMarkers()}
-          </MapView>
-          <TouchableOpacity style={styles.mapCenter} onPress={handleCenterMap}>
-            <Image
-              source={icons.mapCenter}
-              resizeMode="contain"
-              style={styles.centerIcon}
+    <SafeAreaView style={{ flex: 1 }}>
+      <GestureHandlerRootView>
+        <View style={styles.root}>
+          {!isInputFocused && (
+            <>
+              <MapView
+                ref={mapRef}
+                style={styles.map}
+                provider={PROVIDER_DEFAULT}
+                initialRegion={initialRegion}
+                showsUserLocation={true}
+                showsMyLocationButton={false}
+                showsCompass={false}
+                loadingEnabled={true}
+                onRegionChangeComplete={handleRegionChange}
+              >
+                {renderBusMarkers()}
+              </MapView>
+              <TouchableOpacity
+                style={styles.mapCenter}
+                onPress={handleCenterMap}
+              >
+                <Image
+                  source={icons.mapCenter}
+                  resizeMode="contain"
+                  style={styles.centerIcon}
+                />
+              </TouchableOpacity>
+            </>
+          )}
+
+          <View style={styles.searchContainer}>
+            {isInputFocused ? (
+              <Pressable onPress={handleBlur} style={styles.searchIcon}>
+                <AntDesign name="arrowleft" size={20} color="black" />
+              </Pressable>
+            ) : (
+              <View style={styles.searchIcon}>
+                <FontAwesome name="search" size={20} color="black" />
+              </View>
+            )}
+            <TextInput
+              ref={inputRef}
+              value={routeInput}
+              style={styles.input}
+              placeholder="Enter Route"
+              placeholderTextColor="#666"
+              onChangeText={setRouteInput}
+              onFocus={() => setIsInputFocused(true)}
             />
-          </TouchableOpacity>
-        </>
-      )}
-
-      <View style={styles.searchContainer}>
-        {isInputFocused ? (
-          <Pressable onPress={handleBlur} style={styles.searchIcon}>
-            <AntDesign name="arrowleft" size={20} color="black" />
-          </Pressable>
-        ) : (
-          <View style={styles.searchIcon}>
-            <FontAwesome name="search" size={20} color="black" />
+            {routeInput && (
+              <Pressable onPress={() => setRouteInput("")}>
+                <AntDesign name="close" size={20} color="black" />
+              </Pressable>
+            )}
           </View>
-        )}
-        <TextInput
-          ref={inputRef}
-          value={routeInput}
-          style={styles.input}
-          placeholder="Enter Route"
-          placeholderTextColor="#666"
-          onChangeText={setRouteInput}
-          onFocus={() => setIsInputFocused(true)}
-        />
-        {routeInput && (
-          <Pressable onPress={() => setRouteInput("")}>
-            <AntDesign name="close" size={20} color="black" />
-          </Pressable>
-        )}
-      </View>
 
-      {isInputFocused && (
-        <View style={styles.list}>
-          <FlatList
-            data={textsArray}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={(itemData) => <Text>{itemData.item.text}</Text>}
-          />
+          {isInputFocused && (
+            <View style={styles.list}>
+              <FlatList
+                data={textsArray}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={(itemData) => <Text>{itemData.item.text}</Text>}
+              />
+            </View>
+          )}
+
+          <BottomSheetLayout
+            snapPoints={snapPoints}
+            bottomSheetRef={bottomSheetRef}
+          >
+            <View style={styles.container}>
+              <View style={styles.busHeader}>
+                <BusIcon color="#219653" />
+                <Text style={styles.busTitle}>
+                  {trimRouteName(selectedBus?.route!)} -{" "}
+                </Text>
+              </View>
+              <Text style={styles.busId}>{selectedBus?.id!}</Text>
+
+              <Link
+                href={{
+                  pathname: "/bus-route",
+                  params: { route: selectedBus?.route },
+                }}
+                style={styles.link}
+              >
+                Route
+              </Link>
+
+              <View style={styles.stopsHeader}>
+                <Text style={styles.text}>Stop name</Text>
+                <Text style={styles.text}>Expected Time</Text>
+              </View>
+
+              {stops.map((each, index) => (
+                <View key={`${each.stop}_${index}`} style={styles.stopRow}>
+                  <Text>{each.stop}</Text>
+                  <Text>{each.time}</Text>
+                </View>
+              ))}
+            </View>
+          </BottomSheetLayout>
         </View>
-      )}
-    </View>
+      </GestureHandlerRootView>
+    </SafeAreaView>
   );
 };
 
@@ -278,7 +515,7 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     position: "absolute",
-    top: 50,
+    top: 30,
     left: 20,
     right: 20,
     backgroundColor: "white",
@@ -322,5 +559,54 @@ const styles = StyleSheet.create({
     position: "relative",
     top: 120,
     paddingHorizontal: 20,
+  },
+  indicatorStyle: {
+    backgroundColor: "#cccccc",
+    height: 7,
+    width: 50,
+  },
+  link: {
+    fontSize: 14,
+    borderWidth: 2,
+    borderColor: "#3fa1ae",
+    borderRadius: 500,
+    paddingHorizontal: 20,
+    paddingVertical: 3,
+    alignSelf: "flex-start",
+  },
+  text: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  container: {
+    gap: 10,
+    paddingTop: 5,
+    paddingHorizontal: 20,
+    paddingBottom: 100,
+  },
+  busHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  busTitle: {
+    fontWeight: "700",
+    fontSize: 20,
+  },
+  busId: {
+    fontWeight: "400",
+    fontSize: 18,
+  },
+  stopsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  stopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottomWidth: 1,
+    paddingBottom: 8,
   },
 });
