@@ -16,7 +16,9 @@ import React, {
   useState,
 } from "react";
 import {
+  ActivityIndicator,
   Animated,
+  Dimensions,
   FlatList,
   Image,
   Pressable,
@@ -31,7 +33,11 @@ import { icons } from "@/constants";
 import { useLocationStore } from "@/store";
 import useDebounce from "@/lib/hooks/useDebounce";
 import { calculateDistance, trimRouteName } from "@/lib/utils";
-import { fetchNearByBuses, fetchNearbyBusStops } from "@/lib/api";
+import {
+  fetchNearByBuses,
+  fetchNearbyBusStops,
+  fetchTransitRouteDetails,
+} from "@/lib/api";
 
 import BusIcon from "@/components/svgs/BusIcon";
 import BusStop from "@/components/svgs/BusStop";
@@ -59,184 +65,191 @@ export interface BusStop {
   next_stop: string;
 }
 
-const stops = [
-  {
-    stop: "Simla Office",
-    time: "11:16",
-  },
-  {
-    stop: "Mhasoba Gate",
-    time: "11:18",
-  },
-  {
-    stop: "Pumping Station",
-    time: "11:19",
-  },
-  {
-    stop: "Mafatlal Bungalow",
-    time: "11:20",
-  },
-  {
-    stop: "Rangehills Corner",
-    time: "11:21",
-  },
-  {
-    stop: "Pune Vidhyapeeth Gate Aundh Road",
-    time: "11:24",
-  },
-  {
-    stop: "Bal Kalyan Sanstha",
-    time: "11:26",
-  },
-  {
-    stop: "Gol Market Aundh Road",
-    time: "11:27",
-  },
-  {
-    stop: "Kasturba Gandhi Vasahat",
-    time: "11:29",
-  },
-  {
-    stop: "Sindh Colony Aundh Road",
-    time: "11:31",
-  },
-  {
-    stop: "Bremen Chowk",
-    time: "11:32",
-  },
-  {
-    stop: "Bodygate",
-    time: "11:34",
-  },
-  {
-    stop: "Aundhgaon",
-    time: "11:35",
-  },
-  {
-    stop: "Br Gholap Vidyalay",
-    time: "11:38",
-  },
-  {
-    stop: "Navi Sangvi",
-    time: "11:39",
-  },
-  {
-    stop: "Panyachi Taki Navi Sangvi",
-    time: "11:40",
-  },
-  {
-    stop: "Sai Chowk Navi Sangvi",
-    time: "11:41",
-  },
-  {
-    stop: "Simla Office",
-    time: "11:16",
-  },
-  {
-    stop: "Mhasoba Gate",
-    time: "11:18",
-  },
-  {
-    stop: "Pumping Station",
-    time: "11:19",
-  },
-  {
-    stop: "Mafatlal Bungalow",
-    time: "11:20",
-  },
-  {
-    stop: "Rangehills Corner",
-    time: "11:21",
-  },
-  {
-    stop: "Pune Vidhyapeeth Gate Aundh Road",
-    time: "11:24",
-  },
-  {
-    stop: "Bal Kalyan Sanstha",
-    time: "11:26",
-  },
-  {
-    stop: "Gol Market Aundh Road",
-    time: "11:27",
-  },
-  {
-    stop: "Kasturba Gandhi Vasahat",
-    time: "11:29",
-  },
-  {
-    stop: "Simla Office",
-    time: "11:16",
-  },
-  {
-    stop: "Mhasoba Gate",
-    time: "11:18",
-  },
-  {
-    stop: "Pumping Station",
-    time: "11:19",
-  },
-  {
-    stop: "Mafatlal Bungalow",
-    time: "11:20",
-  },
-  {
-    stop: "Rangehills Corner",
-    time: "11:21",
-  },
-  {
-    stop: "Pune Vidhyapeeth Gate Aundh Road",
-    time: "11:24",
-  },
-  {
-    stop: "Bal Kalyan Sanstha",
-    time: "11:26",
-  },
-  {
-    stop: "Gol Market Aundh Road",
-    time: "11:27",
-  },
-  {
-    stop: "Kasturba Gandhi Vasahat",
-    time: "11:29",
-  },
-  {
-    stop: "Simla Office",
-    time: "11:16",
-  },
-  {
-    stop: "Mhasoba Gate",
-    time: "11:18",
-  },
-  {
-    stop: "Pumping Station",
-    time: "11:19",
-  },
-  {
-    stop: "Mafatlal Bungalow",
-    time: "11:20",
-  },
-  {
-    stop: "Rangehills Corner",
-    time: "11:21",
-  },
-  {
-    stop: "Pune Vidhyapeeth Gate Aundh Road",
-    time: "11:24",
-  },
-  {
-    stop: "Bal Kalyan Sanstha",
-    time: "11:26",
-  },
-  {
-    stop: "Gol Market Aundh Road",
-    time: "11:27",
-  },
-  {
-    stop: "Kasturba Gandhi Vasahat",
-    time: "11:29",
-  },
-];
+export interface RouteStop {
+  lat: number;
+  lon: number;
+  name: string;
+  stop_id: string;
+}
+
+// const stops = [
+//   {
+//     stop: "Simla Office",
+//     time: "11:16",
+//   },
+//   {
+//     stop: "Mhasoba Gate",
+//     time: "11:18",
+//   },
+//   {
+//     stop: "Pumping Station",
+//     time: "11:19",
+//   },
+//   {
+//     stop: "Mafatlal Bungalow",
+//     time: "11:20",
+//   },
+//   {
+//     stop: "Rangehills Corner",
+//     time: "11:21",
+//   },
+//   {
+//     stop: "Pune Vidhyapeeth Gate Aundh Road",
+//     time: "11:24",
+//   },
+//   {
+//     stop: "Bal Kalyan Sanstha",
+//     time: "11:26",
+//   },
+//   {
+//     stop: "Gol Market Aundh Road",
+//     time: "11:27",
+//   },
+//   {
+//     stop: "Kasturba Gandhi Vasahat",
+//     time: "11:29",
+//   },
+//   {
+//     stop: "Sindh Colony Aundh Road",
+//     time: "11:31",
+//   },
+//   {
+//     stop: "Bremen Chowk",
+//     time: "11:32",
+//   },
+//   {
+//     stop: "Bodygate",
+//     time: "11:34",
+//   },
+//   {
+//     stop: "Aundhgaon",
+//     time: "11:35",
+//   },
+//   {
+//     stop: "Br Gholap Vidyalay",
+//     time: "11:38",
+//   },
+//   {
+//     stop: "Navi Sangvi",
+//     time: "11:39",
+//   },
+//   {
+//     stop: "Panyachi Taki Navi Sangvi",
+//     time: "11:40",
+//   },
+//   {
+//     stop: "Sai Chowk Navi Sangvi",
+//     time: "11:41",
+//   },
+//   {
+//     stop: "Simla Office",
+//     time: "11:16",
+//   },
+//   {
+//     stop: "Mhasoba Gate",
+//     time: "11:18",
+//   },
+//   {
+//     stop: "Pumping Station",
+//     time: "11:19",
+//   },
+//   {
+//     stop: "Mafatlal Bungalow",
+//     time: "11:20",
+//   },
+//   {
+//     stop: "Rangehills Corner",
+//     time: "11:21",
+//   },
+//   {
+//     stop: "Pune Vidhyapeeth Gate Aundh Road",
+//     time: "11:24",
+//   },
+//   {
+//     stop: "Bal Kalyan Sanstha",
+//     time: "11:26",
+//   },
+//   {
+//     stop: "Gol Market Aundh Road",
+//     time: "11:27",
+//   },
+//   {
+//     stop: "Kasturba Gandhi Vasahat",
+//     time: "11:29",
+//   },
+//   {
+//     stop: "Simla Office",
+//     time: "11:16",
+//   },
+//   {
+//     stop: "Mhasoba Gate",
+//     time: "11:18",
+//   },
+//   {
+//     stop: "Pumping Station",
+//     time: "11:19",
+//   },
+//   {
+//     stop: "Mafatlal Bungalow",
+//     time: "11:20",
+//   },
+//   {
+//     stop: "Rangehills Corner",
+//     time: "11:21",
+//   },
+//   {
+//     stop: "Pune Vidhyapeeth Gate Aundh Road",
+//     time: "11:24",
+//   },
+//   {
+//     stop: "Bal Kalyan Sanstha",
+//     time: "11:26",
+//   },
+//   {
+//     stop: "Gol Market Aundh Road",
+//     time: "11:27",
+//   },
+//   {
+//     stop: "Kasturba Gandhi Vasahat",
+//     time: "11:29",
+//   },
+//   {
+//     stop: "Simla Office",
+//     time: "11:16",
+//   },
+//   {
+//     stop: "Mhasoba Gate",
+//     time: "11:18",
+//   },
+//   {
+//     stop: "Pumping Station",
+//     time: "11:19",
+//   },
+//   {
+//     stop: "Mafatlal Bungalow",
+//     time: "11:20",
+//   },
+//   {
+//     stop: "Rangehills Corner",
+//     time: "11:21",
+//   },
+//   {
+//     stop: "Pune Vidhyapeeth Gate Aundh Road",
+//     time: "11:24",
+//   },
+//   {
+//     stop: "Bal Kalyan Sanstha",
+//     time: "11:26",
+//   },
+//   {
+//     stop: "Gol Market Aundh Road",
+//     time: "11:27",
+//   },
+//   {
+//     stop: "Kasturba Gandhi Vasahat",
+//     time: "11:29",
+//   },
+// ];
 
 const BusesPage = () => {
   const { location } = useLocationStore();
@@ -257,6 +270,9 @@ const BusesPage = () => {
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [selectedBus, setSelectedBus] = useState<BusData | undefined>();
   const [selectedBusStop, setSelectedBusStop] = useState<BusStop | undefined>();
+  const [selectedMarkerType, setSelectedMarkerType] = useState<
+    "bus" | "bus-stop" | undefined
+  >();
 
   const mapRef = useRef<MapView>(null);
   const inputRef = useRef<TextInput>(null);
@@ -297,6 +313,13 @@ const BusesPage = () => {
     queryKey: ["nearby-bus-stops", region?.latitude, region?.longitude],
     queryFn: () => fetchNearbyBusStops(region?.latitude!, region?.longitude!),
     enabled: shouldFetch,
+    retry: false,
+  });
+
+  const { data: routeDetails, isLoading: isRouteDetailsLoading } = useQuery({
+    queryKey: ["route-details", selectedBus],
+    queryFn: () => fetchTransitRouteDetails(selectedBus?.route!),
+    enabled: !!selectedBus,
     retry: false,
   });
 
@@ -378,6 +401,7 @@ const BusesPage = () => {
           rotation={bus.orientation}
           tracksViewChanges={false}
           onPress={() => {
+            setSelectedMarkerType("bus");
             setSelectedBus(bus);
             bottomSheetRef.current?.snapToIndex(0);
           }}
@@ -403,6 +427,7 @@ const BusesPage = () => {
           }}
           tracksViewChanges={false}
           onPress={() => {
+            setSelectedMarkerType("bus-stop");
             setSelectedBusStop(stop);
             bottomSheetRef.current?.snapToIndex(0);
           }}
@@ -505,35 +530,73 @@ const BusesPage = () => {
             bottomSheetRef={bottomSheetRef}
           >
             <View style={styles.container}>
-              <View style={styles.busHeader}>
-                <BusIcon color="#219653" />
-                <Text style={styles.busTitle}>
-                  {trimRouteName(selectedBus?.route!)} -{" "}
-                </Text>
-              </View>
-              <Text style={styles.busId}>{selectedBus?.id!}</Text>
-
-              <Link
-                href={{
-                  pathname: "/bus-route",
-                  params: { route: selectedBus?.route },
-                }}
-                style={styles.link}
-              >
-                Route
-              </Link>
-
-              <View style={styles.stopsHeader}>
-                <Text style={styles.text}>Stop name</Text>
-                <Text style={styles.text}>Expected Time</Text>
-              </View>
-
-              {stops.map((each, index) => (
-                <View key={`${each.stop}_${index}`} style={styles.stopRow}>
-                  <Text>{each.stop}</Text>
-                  <Text>{each.time}</Text>
+              {isRouteDetailsLoading && (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" />
                 </View>
-              ))}
+              )}
+              {selectedMarkerType === "bus" && selectedBus && routeDetails && (
+                <>
+                  <View style={styles.busHeader}>
+                    <BusIcon color="#219653" />
+                    <Text style={styles.busTitle}>
+                      {trimRouteName(selectedBus?.route!)} -{" "}
+                      {routeDetails?.[0]?.stops?.at(-1)?.name}
+                    </Text>
+                  </View>
+                  <Text style={styles.busId}>{selectedBus?.id!}</Text>
+
+                  <Link
+                    href={{
+                      pathname: "/bus-route",
+                      params: { route: selectedBus?.route },
+                    }}
+                    style={styles.link}
+                  >
+                    Route
+                  </Link>
+
+                  <View style={styles.stopsHeader}>
+                    <Text style={styles.text}>Stop name</Text>
+                    <Text style={styles.text}>Expected Time</Text>
+                  </View>
+
+                  {routeDetails[0].stops.map(
+                    (each: RouteStop, index: number) => (
+                      <View
+                        key={`${each.name}_${index}`}
+                        style={styles.stopRow}
+                      >
+                        <Text>{each.name}</Text>
+                        <Text>{each.stop_id}</Text>
+                      </View>
+                    )
+                  )}
+                </>
+              )}
+
+              {selectedMarkerType === "bus-stop" && selectedBusStop && (
+                <>
+                  <View style={styles.busHeader}>
+                    <BusStop />
+                    <Text style={styles.busTitle}>
+                      Towards:{" "}
+                      {selectedBusStop.name?.length > 20
+                        ? `${selectedBusStop.name.slice(0, 20)}...`
+                        : selectedBusStop.name}
+                    </Text>
+                  </View>
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      fontWeight: "400",
+                      color: "#808080",
+                    }}
+                  >
+                    Towards: {selectedBusStop.next_stop}
+                  </Text>
+                </>
+              )}
             </View>
           </BottomSheetLayout>
         </View>
@@ -543,6 +606,8 @@ const BusesPage = () => {
 };
 
 export default BusesPage;
+
+const { height } = Dimensions.get("window");
 
 const styles = StyleSheet.create({
   root: {
@@ -622,6 +687,7 @@ const styles = StyleSheet.create({
     paddingTop: 5,
     paddingHorizontal: 20,
     paddingBottom: 100,
+    minHeight: 0.5 * height,
   },
   busHeader: {
     flexDirection: "row",
@@ -647,5 +713,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     borderBottomWidth: 1,
     paddingBottom: 8,
+  },
+  loadingContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    flex: 1,
   },
 });

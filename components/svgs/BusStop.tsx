@@ -2,7 +2,7 @@ import * as React from "react";
 import Svg, { Circle, Path } from "react-native-svg";
 
 const BusStop = () => (
-  <Svg width={18} height={18} fill="none">
+  <Svg width={12} height={12} viewBox="0 0 18 18" fill="none">
     <Circle cx={9} cy={9} r={9} fill="#CC348B" />
     <Path
       fill="#fff"
