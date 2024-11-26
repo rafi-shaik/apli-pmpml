@@ -6,12 +6,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import React, { useCallback, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
+import { BusData } from "@/types";
 import { useLocationStore } from "@/store";
 import { icons, images } from "@/constants";
 import { trimRouteName } from "@/lib/utils";
 import { fetchNearByBuses } from "@/lib/api";
 
-import { BusData } from "./buses";
 import IconCard from "@/components/IconCard";
 import GreenBusIcon from "@/components/svgs/GreenBusIcon";
 import WhiteBusIcon from "@/components/svgs/WhiteBusIcon";

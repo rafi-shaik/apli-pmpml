@@ -1,26 +1,39 @@
 import { router } from "expo-router";
-import React, { useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AntDesign } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
-import MapView, { Marker } from "react-native-maps";
 import { useLocalSearchParams } from "expo-router";
+import MapView, { Marker, Polyline } from "react-native-maps";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { BusData } from "./(tabs)/buses";
-import { fetchBusesOnRoute, fetchTransitRouteDetails } from "@/lib/api";
+import { BusData, BusStop, RouteStop } from "@/types";
 import { trimRouteName } from "@/lib/utils";
+import { fetchBusesOnRoute } from "@/lib/api";
+import { useTransitRouteDetailsStore } from "@/store";
 
 import BottomSheet from "@gorhom/bottom-sheet";
+import BusStopIcon from "@/components/svgs/BusStopIcon";
 import GreenBusIcon from "@/components/svgs/GreenBusIcon";
 import WhiteBusIcon from "@/components/svgs/WhiteBusIcon";
 import BottomSheetLayout from "@/components/BottomSheetLayout";
 
+import polyline from "@mapbox/polyline";
+
+type PolyLinePoint = {
+  latitude: number;
+  longitude: number;
+};
+
 const BusRoute = () => {
   const { route } = useLocalSearchParams<{ route?: string }>();
+  const { details } = useTransitRouteDetailsStore();
 
+  const [polylinePath, setPolylinePath] = useState<PolyLinePoint[]>([]);
+
+  const mapRef = useRef<MapView>(null);
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ["10%", "95%"], []);
 
@@ -31,12 +44,57 @@ const BusRoute = () => {
     retry: false,
   });
 
-  const { data: routeDetails, isLoading } = useQuery({
-    queryKey: ["route-details", route],
-    queryFn: () => fetchTransitRouteDetails(route!),
-    enabled: !!route,
-    retry: false,
-  });
+  const coordinates = polyline
+    .decode(details?.polyline)
+    .map(([latitude, longitude]: [number, number]) => ({
+      latitude,
+      longitude,
+    }));
+
+  const handleFitToPolyline = () => {
+    if (mapRef.current) {
+      mapRef.current.fitToCoordinates(coordinates, {
+        edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
+        animated: true,
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (!coordinates) return;
+
+    let currentIndex = 0;
+
+    const interval = setInterval(() => {
+      if (currentIndex < coordinates.length) {
+        setPolylinePath((prevPath) => [...prevPath, coordinates[currentIndex]]);
+        currentIndex++;
+      } else {
+        setPolylinePath([]);
+        currentIndex = 0;
+      }
+    }, 70);
+
+    return () => clearInterval(interval);
+  }, [coordinates]);
+
+  const renderBusStopMarkers = () => {
+    return details?.stops.map((stop: RouteStop) => (
+      <Marker
+        key={stop.stop_id}
+        coordinate={{
+          latitude: stop.lat,
+          longitude: stop.lon,
+        }}
+        tracksViewChanges={false}
+      >
+        <BusStopIcon />
+      </Marker>
+    ));
+  };
+
+  // console.log((polylinePath));
+  
 
   return (
     <SafeAreaView style={styles.root}>
@@ -76,20 +134,21 @@ const BusRoute = () => {
               </Text>
             </View>
             <View style={styles.nameContainer}>
-              {routeDetails && (
+              {details && (
                 <>
-                  <Text>{routeDetails[0]?.stops?.[0]?.name}</Text>
+                  <Text>{details?.stops[0].name}</Text>
                   <FontAwesome6
                     name="arrow-right-arrow-left"
                     size={12}
                     color="black"
                   />
-                  <Text>{routeDetails[0]?.stops?.at(-1)?.name}</Text>
+                  <Text>{details?.stops.at(-1)?.name}</Text>
                 </>
               )}
             </View>
           </View>
           <MapView
+            ref={mapRef}
             style={styles.map}
             showsUserLocation={true}
             showsMyLocationButton={false}
@@ -100,6 +159,7 @@ const BusRoute = () => {
               latitudeDelta: 0.0734,
               longitudeDelta: 0.0855,
             }}
+            onLayout={handleFitToPolyline}
           >
             {routeBuses?.map((bus: BusData) => {
               const modifiedRoute = trimRouteName(bus.route);
@@ -121,6 +181,22 @@ const BusRoute = () => {
                 </Marker>
               );
             })}
+            {renderBusStopMarkers()}
+            
+
+            {/* <Polyline
+              coordinates={coordinates}
+              strokeColor="#FF0000"
+              strokeWidth={3}
+            /> */}
+
+            {/* {polylinePath.length > 0 && ( */}
+              <Polyline
+                coordinates={polylinePath}
+                strokeColor="#000" 
+                strokeWidth={7}
+              />
+            
           </MapView>
         </View>
         <BottomSheetLayout

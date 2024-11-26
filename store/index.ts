@@ -1,16 +1,6 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-interface LocationStore {
-  location: {
-    latitude: number;
-    longitude: number;
-  } | null;
-  isLocationGranted: string | null;
-  setLocation: (latitude: number, longitude: number) => void;
-  setIsLocationGranted: (isGranted: string) => void;
-  checkLocationAccess: () => Promise<void>;
-}
+import { LocationStore, RouteDetails, TransitRouteStore } from "@/types";
 
 export const useLocationStore = create<LocationStore>((set) => ({
   location: null,
@@ -32,4 +22,10 @@ export const useLocationStore = create<LocationStore>((set) => ({
     await AsyncStorage.setItem("isLocationGranted", JSON.stringify(isGranted));
     set({ isLocationGranted: isGranted });
   },
+}));
+
+export const useTransitRouteDetailsStore = create<TransitRouteStore>((set) => ({
+  details: null,
+  setRouteDetails: (route_details: RouteDetails) =>
+    set({ details: route_details }),
 }));

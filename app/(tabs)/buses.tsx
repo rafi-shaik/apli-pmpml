@@ -5,7 +5,7 @@ import DeviceInfo from "react-native-device-info";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Link, useFocusEffect, useRouter } from "expo-router";
+import { Link, useFocusEffect } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import MapView, { Marker, PROVIDER_DEFAULT, Region } from "react-native-maps";
 import React, {
@@ -30,9 +30,9 @@ import {
 } from "react-native";
 
 import { icons } from "@/constants";
-import { useLocationStore } from "@/store";
 import useDebounce from "@/lib/hooks/useDebounce";
 import { calculateDistance, trimRouteName } from "@/lib/utils";
+import { useLocationStore, useTransitRouteDetailsStore } from "@/store";
 import {
   fetchNearByBuses,
   fetchNearbyBusStops,
@@ -40,222 +40,16 @@ import {
 } from "@/lib/api";
 
 import BusIcon from "@/components/svgs/BusIcon";
-import BusStop from "@/components/svgs/BusStop";
+import BusStopIcon from "@/components/svgs/BusStopIcon";
 import GreenBusIcon from "@/components/svgs/GreenBusIcon";
 import WhiteBusIcon from "@/components/svgs/WhiteBusIcon";
 import BottomSheetLayout from "@/components/BottomSheetLayout";
 
-export interface BusData {
-  ac: string;
-  id: string;
-  agency: string;
-  lat: string;
-  lon: string;
-  route: string;
-  route_desc: string;
-  timestamp: number;
-  orientation: number;
-}
-
-export interface BusStop {
-  id: string;
-  lat: number;
-  lng: number;
-  name: string;
-  next_stop: string;
-}
-
-export interface RouteStop {
-  lat: number;
-  lon: number;
-  name: string;
-  stop_id: string;
-}
-
-// const stops = [
-//   {
-//     stop: "Simla Office",
-//     time: "11:16",
-//   },
-//   {
-//     stop: "Mhasoba Gate",
-//     time: "11:18",
-//   },
-//   {
-//     stop: "Pumping Station",
-//     time: "11:19",
-//   },
-//   {
-//     stop: "Mafatlal Bungalow",
-//     time: "11:20",
-//   },
-//   {
-//     stop: "Rangehills Corner",
-//     time: "11:21",
-//   },
-//   {
-//     stop: "Pune Vidhyapeeth Gate Aundh Road",
-//     time: "11:24",
-//   },
-//   {
-//     stop: "Bal Kalyan Sanstha",
-//     time: "11:26",
-//   },
-//   {
-//     stop: "Gol Market Aundh Road",
-//     time: "11:27",
-//   },
-//   {
-//     stop: "Kasturba Gandhi Vasahat",
-//     time: "11:29",
-//   },
-//   {
-//     stop: "Sindh Colony Aundh Road",
-//     time: "11:31",
-//   },
-//   {
-//     stop: "Bremen Chowk",
-//     time: "11:32",
-//   },
-//   {
-//     stop: "Bodygate",
-//     time: "11:34",
-//   },
-//   {
-//     stop: "Aundhgaon",
-//     time: "11:35",
-//   },
-//   {
-//     stop: "Br Gholap Vidyalay",
-//     time: "11:38",
-//   },
-//   {
-//     stop: "Navi Sangvi",
-//     time: "11:39",
-//   },
-//   {
-//     stop: "Panyachi Taki Navi Sangvi",
-//     time: "11:40",
-//   },
-//   {
-//     stop: "Sai Chowk Navi Sangvi",
-//     time: "11:41",
-//   },
-//   {
-//     stop: "Simla Office",
-//     time: "11:16",
-//   },
-//   {
-//     stop: "Mhasoba Gate",
-//     time: "11:18",
-//   },
-//   {
-//     stop: "Pumping Station",
-//     time: "11:19",
-//   },
-//   {
-//     stop: "Mafatlal Bungalow",
-//     time: "11:20",
-//   },
-//   {
-//     stop: "Rangehills Corner",
-//     time: "11:21",
-//   },
-//   {
-//     stop: "Pune Vidhyapeeth Gate Aundh Road",
-//     time: "11:24",
-//   },
-//   {
-//     stop: "Bal Kalyan Sanstha",
-//     time: "11:26",
-//   },
-//   {
-//     stop: "Gol Market Aundh Road",
-//     time: "11:27",
-//   },
-//   {
-//     stop: "Kasturba Gandhi Vasahat",
-//     time: "11:29",
-//   },
-//   {
-//     stop: "Simla Office",
-//     time: "11:16",
-//   },
-//   {
-//     stop: "Mhasoba Gate",
-//     time: "11:18",
-//   },
-//   {
-//     stop: "Pumping Station",
-//     time: "11:19",
-//   },
-//   {
-//     stop: "Mafatlal Bungalow",
-//     time: "11:20",
-//   },
-//   {
-//     stop: "Rangehills Corner",
-//     time: "11:21",
-//   },
-//   {
-//     stop: "Pune Vidhyapeeth Gate Aundh Road",
-//     time: "11:24",
-//   },
-//   {
-//     stop: "Bal Kalyan Sanstha",
-//     time: "11:26",
-//   },
-//   {
-//     stop: "Gol Market Aundh Road",
-//     time: "11:27",
-//   },
-//   {
-//     stop: "Kasturba Gandhi Vasahat",
-//     time: "11:29",
-//   },
-//   {
-//     stop: "Simla Office",
-//     time: "11:16",
-//   },
-//   {
-//     stop: "Mhasoba Gate",
-//     time: "11:18",
-//   },
-//   {
-//     stop: "Pumping Station",
-//     time: "11:19",
-//   },
-//   {
-//     stop: "Mafatlal Bungalow",
-//     time: "11:20",
-//   },
-//   {
-//     stop: "Rangehills Corner",
-//     time: "11:21",
-//   },
-//   {
-//     stop: "Pune Vidhyapeeth Gate Aundh Road",
-//     time: "11:24",
-//   },
-//   {
-//     stop: "Bal Kalyan Sanstha",
-//     time: "11:26",
-//   },
-//   {
-//     stop: "Gol Market Aundh Road",
-//     time: "11:27",
-//   },
-//   {
-//     stop: "Kasturba Gandhi Vasahat",
-//     time: "11:29",
-//   },
-// ];
+import { BusData, BusStop, RouteStop } from "@/types";
 
 const BusesPage = () => {
   const { location } = useLocationStore();
   // const [deviceId, setDeviceId] = useState("");
-
-  const router = useRouter();
 
   const initialRegion = {
     latitude: location?.latitude!,
@@ -263,6 +57,8 @@ const BusesPage = () => {
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   };
+
+  const { setRouteDetails } = useTransitRouteDetailsStore();
 
   const [routeInput, setRouteInput] = useState("");
   const [isFocused, setIsFocused] = useState(false);
@@ -342,6 +138,12 @@ const BusesPage = () => {
   );
 
   useEffect(() => {
+    if (routeDetails) {
+      setRouteDetails(routeDetails[0]);
+    }
+  }, [routeDetails]);
+
+  useEffect(() => {
     if (error) {
       Toast.show("No buses available at this time. Please try again.", {
         duration: Toast.durations.SHORT,
@@ -417,25 +219,23 @@ const BusesPage = () => {
   };
 
   const renderBusStopMarkers = () => {
-    return busStops?.map((stop: BusStop) => {
-      return (
-        <Marker
-          key={stop.id}
-          coordinate={{
-            latitude: stop.lat,
-            longitude: stop.lng,
-          }}
-          tracksViewChanges={false}
-          onPress={() => {
-            setSelectedMarkerType("bus-stop");
-            setSelectedBusStop(stop);
-            bottomSheetRef.current?.snapToIndex(0);
-          }}
-        >
-          <BusStop />
-        </Marker>
-      );
-    });
+    return busStops?.map((stop: BusStop) => (
+      <Marker
+        key={stop.id}
+        coordinate={{
+          latitude: stop.lat,
+          longitude: stop.lng,
+        }}
+        tracksViewChanges={false}
+        onPress={() => {
+          setSelectedMarkerType("bus-stop");
+          setSelectedBusStop(stop);
+          bottomSheetRef.current?.snapToIndex(0);
+        }}
+      >
+        <BusStopIcon />
+      </Marker>
+    ));
   };
 
   const handleBlur = () => {
@@ -578,7 +378,7 @@ const BusesPage = () => {
               {selectedMarkerType === "bus-stop" && selectedBusStop && (
                 <>
                   <View style={styles.busHeader}>
-                    <BusStop />
+                    <BusStopIcon />
                     <Text style={styles.busTitle}>
                       Towards:{" "}
                       {selectedBusStop.name?.length > 20

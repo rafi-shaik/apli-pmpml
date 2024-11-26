@@ -10,20 +10,11 @@ import React, { useState } from "react";
 import CustomButton from "@/components/CustomButton";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AntDesign from "@expo/vector-icons/AntDesign";
+import { FAQSection } from "@/types";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const TAB_BAR_HEIGHT = 60;
 const BUTTON_CONTAINER_HEIGHT = 100;
-
-interface FAQItem {
-  question: string;
-  answer: string;
-}
-
-interface FAQSection {
-  title: string;
-  items: FAQItem[];
-}
 
 const faqData: FAQSection[] = [
   {
