@@ -7,20 +7,21 @@ import React, { useCallback, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { BusData } from "@/types";
-import { useLocationStore, useRouteOptionsStore } from "@/store";
+import { useLocationStore } from "@/store";
 import { icons, images } from "@/constants";
 import { trimRouteName } from "@/lib/utils";
-import { fetchNearByBuses, fetchRouteOptions } from "@/lib/api";
+import { fetchNearByBuses } from "@/lib/api";
 
 import IconCard from "@/components/IconCard";
 import GreenBusIcon from "@/components/svgs/GreenBusIcon";
 import WhiteBusIcon from "@/components/svgs/WhiteBusIcon";
+import LoadingModal from "@/components/LoadingModal";
 
 const HomePage = () => {
   const { setLocation, location } = useLocationStore();
-  const { routeOptions, setRouteOptions } = useRouteOptionsStore();
 
   const [isFocused, setIsFocused] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   const getCurrentLocation = async () => {
     let { coords } = await Location.getCurrentPositionAsync();
@@ -31,19 +32,11 @@ const HomePage = () => {
   const shouldFetch =
     Boolean(location?.latitude && location?.longitude) && isFocused;
 
-  const { data: buses } = useQuery({
+  const { data: buses, isLoading } = useQuery({
     queryKey: ["nearby-buses-data", location?.latitude, location?.longitude],
     queryFn: () => fetchNearByBuses(location?.latitude!, location?.longitude!),
     enabled: shouldFetch,
     refetchInterval: 5000,
-    retry: false,
-  });
-
-  const shouldFetchRouteOptions = routeOptions.length === 0;
-  const { data: routes } = useQuery({
-    queryKey: ["route-options"],
-    queryFn: () => fetchRouteOptions(),
-    enabled: shouldFetchRouteOptions,
     retry: false,
   });
 
@@ -58,14 +51,12 @@ const HomePage = () => {
   );
 
   useEffect(() => {
-    getCurrentLocation();
-  }, []);
+    setShowModal(isLoading);
+  }, [isLoading]);
 
   useEffect(() => {
-    if (routes) {
-      setRouteOptions(routes);
-    }
-  }, [routes]);
+    getCurrentLocation();
+  }, []);
 
   const renderBusMarkers = () => {
     return buses?.map((bus: BusData) => {
@@ -128,6 +119,10 @@ const HomePage = () => {
             </MapView>
           )}
         </View>
+        <LoadingModal
+          isVisible={showModal}
+          text="Loading buses.Please wait..."
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -139,7 +134,6 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     paddingHorizontal: 15,
-    paddingTop: 20,
   },
   cardContainer: {
     flexDirection: "row",

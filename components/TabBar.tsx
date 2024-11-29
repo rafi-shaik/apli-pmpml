@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 60,
+    height: 70,
   },
   tabItem: {
     width: TAB_WIDTH,

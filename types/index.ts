@@ -76,9 +76,20 @@ export interface RouteOption {
   trips_schedule: string[];
 }
 
+export interface Option {
+  id: string;
+  long_name: string;
+  end: string;
+  count: number;
+}
+
 export interface RouteSearchedOptionsStore {
-  previousOptions: RouteOption[];
-  setOption: (option: RouteOption) => Promise<void>;
+  previousOptions: Option[];
+  setOption: (option: {
+    id: string;
+    long_name: string;
+    end: string;
+  }) => Promise<void>;
   loadPreviousOptions: () => Promise<void>;
 }
 

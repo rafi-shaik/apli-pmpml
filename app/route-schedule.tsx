@@ -1,11 +1,11 @@
 import React from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-
-import { useTransitRouteDetailsStore } from "@/store";
-import { trimRouteName } from "@/lib/utils";
+import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AntDesign, FontAwesome6 } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+
+import { trimRouteName } from "@/lib/utils";
+import { useTransitRouteDetailsStore } from "@/store";
 
 const RouteSchedule = () => {
   const { route } = useLocalSearchParams<{ route?: string }>();
@@ -13,18 +13,23 @@ const RouteSchedule = () => {
 
   const sortedSchedule = details?.trips_schedule.sort();
 
+  const parseTime = (timeString: string) => {
+    const [hours, minutes] = timeString.split(":").map(Number);
+    return hours * 60 + minutes;
+  };
+
   const getCurrentTime = () => {
     const now = new Date();
-    return now.toLocaleTimeString("en-GB", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const hours = now.getHours().toString().padStart(2, "0");
+    const minutes = now.getMinutes().toString().padStart(2, "0");
+    return `${hours}:${minutes}`;
   };
 
   const currentTime = getCurrentTime();
+  const currentMinutes = parseTime(currentTime);
 
   return (
-    <SafeAreaView style={styles.root}>
+    <SafeAreaView style={styles.mainContainer}>
       <View style={styles.root}>
         <View style={styles.topBar}>
           <View style={styles.titleContainer}>
@@ -44,13 +49,15 @@ const RouteSchedule = () => {
           <View style={styles.nameContainer}>
             {details && (
               <>
-                <Text>{details?.stops[0].name}</Text>
+                <Text style={{ fontSize: 13 }}>{details?.stops[0].name}</Text>
                 <FontAwesome6
                   name="arrow-right-arrow-left"
                   size={12}
                   color="black"
                 />
-                <Text>{details?.stops.at(-1)?.name}</Text>
+                <Text style={{ fontSize: 13 }}>
+                  {details?.stops.at(-1)?.name}
+                </Text>
               </>
             )}
           </View>
@@ -84,10 +91,13 @@ const RouteSchedule = () => {
             <View
               style={{ flexDirection: "row", alignItems: "center", gap: 15 }}
             >
-              <DetailsContainer title="First Bus" detail={sortedSchedule[0]!} />
+              <DetailsContainer
+                title="First Bus"
+                detail={sortedSchedule?.[0]!}
+              />
               <DetailsContainer
                 title="Last Bus"
-                detail={sortedSchedule?.at(-1)}
+                detail={sortedSchedule?.at(-1)!}
               />
             </View>
           </View>
@@ -97,7 +107,7 @@ const RouteSchedule = () => {
             <View style={styles.tripsContainer}>
               {sortedSchedule?.map((trip: string, index: number) => {
                 const isLast = index === sortedSchedule.length - 1;
-                const isFuture = trip > currentTime;
+                const isFuture = parseTime(trip) > currentMinutes;
                 return (
                   <Text
                     key={`${trip}_${index}`}
@@ -119,22 +129,22 @@ const RouteSchedule = () => {
 export default RouteSchedule;
 
 const styles = StyleSheet.create({
+  mainContainer: {
+    flex: 1,
+  },
   root: {
     flex: 1,
-    borderBottomWidth: 1,
   },
   topBar: {
-    width: "100%",
     backgroundColor: "white",
     gap: 8,
     paddingVertical: 12,
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    elevation: 5,
+    zIndex: 100,
   },
   titleContainer: {
     flexDirection: "row",

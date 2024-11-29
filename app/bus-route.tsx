@@ -1,25 +1,26 @@
 import { Link, router } from "expo-router";
-import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AntDesign } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
+import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
+import { SafeAreaView } from "react-native-safe-area-context";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
 import MapView, {
   Callout,
   MapMarker,
   Marker,
   Polyline,
 } from "react-native-maps";
-import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { BusData, RouteStop } from "@/types";
 import { trimRouteName } from "@/lib/utils";
-import { fetchBusesOnRoute } from "@/lib/api";
-import { useTransitRouteDetailsStore } from "@/store";
+import { BusData, RouteStop } from "@/types";
+import { useLocationStore, useTransitRouteDetailsStore } from "@/store";
+import { fetchBusesOnRoute, fetchTransitRouteDetails } from "@/lib/api";
 
 import BottomSheet from "@gorhom/bottom-sheet";
+import LoadingModal from "@/components/LoadingModal";
 import BusStopIcon from "@/components/svgs/BusStopIcon";
 import GreenBusIcon from "@/components/svgs/GreenBusIcon";
 import WhiteBusIcon from "@/components/svgs/WhiteBusIcon";
@@ -34,30 +35,43 @@ type PolyLinePoint = {
 
 const BusRoute = () => {
   const { route } = useLocalSearchParams<{ route?: string }>();
-  const { details } = useTransitRouteDetailsStore();
 
+  const snapPoints = useMemo(() => ["10%", "90%"], []);
+
+  const { location } = useLocationStore();
+  const { details, setRouteDetails } = useTransitRouteDetailsStore();
+
+  const initialRegion = {
+    latitude: location?.latitude!,
+    longitude: location?.longitude!,
+    latitudeDelta: 0.0922,
+    longitudeDelta: 0.0421,
+  };
+
+  const [showModal, setShowModal] = useState(false);
+  const [initialRoute, setInitialRoute] = useState(route);
   const [polylinePath, setPolylinePath] = useState<PolyLinePoint[]>([]);
   const [selectedStop, setSelectedStop] = useState<RouteStop | null>(null);
+  const [coordinates, setCoordinates] = useState<PolyLinePoint[]>([]);
 
   const mapRef = useRef<MapView>(null);
   const bottomSheetRef = useRef<BottomSheet>(null);
   const markerRefs = useRef<Record<string, React.RefObject<MapMarker>>>({});
 
-  const snapPoints = useMemo(() => ["10%", "90%"], []);
-
-  const { data: routeBuses } = useQuery({
-    queryKey: ["route-buses", route],
-    queryFn: () => fetchBusesOnRoute(route!),
-    enabled: !!route,
+  const { data: routeBuses, isLoading: busDetailsLoading } = useQuery({
+    queryKey: ["route-buses", initialRoute],
+    queryFn: () => fetchBusesOnRoute(initialRoute!),
+    refetchInterval: 5000,
+    enabled: !!initialRoute,
     retry: false,
   });
 
-  const coordinates = polyline
-    .decode(details?.polyline)
-    .map(([latitude, longitude]: [number, number]) => ({
-      latitude,
-      longitude,
-    }));
+  const { data: routeDetails, isLoading: routeDetailsLoading } = useQuery({
+    queryKey: ["route-details", initialRoute],
+    queryFn: () => fetchTransitRouteDetails(initialRoute!),
+    enabled: !!initialRoute,
+    retry: false,
+  });
 
   const handleFitToPolyline = () => {
     if (mapRef.current) {
@@ -69,13 +83,35 @@ const BusRoute = () => {
   };
 
   useEffect(() => {
-    if (!coordinates) return;
+    if (details) {
+      const coordinates = polyline
+        .decode(details.polyline!)
+        .map(([latitude, longitude]: [number, number]) => ({
+          latitude,
+          longitude,
+        }));
 
+      setCoordinates(coordinates);
+    }
+  }, [details]);
+
+  useEffect(() => {
+    setShowModal(routeDetailsLoading || busDetailsLoading);
+  }, [routeDetailsLoading, busDetailsLoading]);
+
+  useEffect(() => {
+    if (routeDetails) {
+      setRouteDetails(routeDetails[0]);
+    }
+  }, [routeDetails]);
+
+  useEffect(() => {
+    if (!coordinates) return;
     let currentIndex = 0;
 
     const interval = setInterval(() => {
       setPolylinePath((prevPath) => {
-        if (prevPath.length >= coordinates.length) {
+        if (prevPath.length >= coordinates?.length) {
           currentIndex = 0;
           return [];
         }
@@ -84,7 +120,7 @@ const BusRoute = () => {
         currentIndex++;
         return newPath;
       });
-    }, 100);
+    }, 30);
 
     return () => clearInterval(interval);
   }, [coordinates]);
@@ -159,6 +195,18 @@ const BusRoute = () => {
     bottomSheetRef.current?.snapToIndex(0);
   };
 
+  const swapRouteName = () => {
+    let swappedRouteName = "";
+
+    if (initialRoute?.endsWith("UP")) {
+      swappedRouteName = initialRoute?.replace("UP", "DOWN");
+    } else if (initialRoute?.endsWith("DOWN")) {
+      swappedRouteName = initialRoute?.replace("DOWN", "UP");
+    }
+
+    setInitialRoute(swappedRouteName);
+  };
+
   return (
     <SafeAreaView style={styles.root}>
       <GestureHandlerRootView>
@@ -168,8 +216,6 @@ const BusRoute = () => {
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-
-                paddingHorizontal: 20,
               }}
             >
               <Pressable
@@ -189,23 +235,30 @@ const BusRoute = () => {
                 }}
               >
                 <Text style={{ fontWeight: "700", fontSize: 18 }}>
-                  Route - {trimRouteName(route!)}
+                  Route - {trimRouteName(initialRoute!)}
                 </Text>
               </View>
               <Text style={{ fontSize: 15 }}>
                 {routeBuses?.length} {routeBuses?.length > 1 ? "buses" : "bus"}
               </Text>
             </View>
+
             <View style={styles.nameContainer}>
               {details && (
                 <>
-                  <Text>{details?.stops[0].name}</Text>
-                  <FontAwesome6
-                    name="arrow-right-arrow-left"
-                    size={12}
-                    color="black"
-                  />
-                  <Text>{details?.stops.at(-1)?.name}</Text>
+                  <Text style={{ fontSize: 13 }}>
+                    {details?.stops[0].name.slice(0, 25)}
+                  </Text>
+                  <Pressable onPress={swapRouteName}>
+                    <FontAwesome6
+                      name="arrow-right-arrow-left"
+                      size={12}
+                      color="black"
+                    />
+                  </Pressable>
+                  <Text style={{ fontSize: 13 }}>
+                    {details?.stops.at(-1)?.name.slice(0, 25)}
+                  </Text>
                 </>
               )}
             </View>
@@ -216,12 +269,7 @@ const BusRoute = () => {
             showsUserLocation={true}
             showsMyLocationButton={false}
             loadingEnabled={true}
-            initialRegion={{
-              latitude: 18.5199,
-              longitude: 73.8566,
-              latitudeDelta: 0.0734,
-              longitudeDelta: 0.0855,
-            }}
+            initialRegion={initialRegion}
             onLayout={handleFitToPolyline}
           >
             {renderBusMarkers()}
@@ -229,7 +277,7 @@ const BusRoute = () => {
 
             <Polyline
               coordinates={coordinates}
-              strokeColor="black"
+              strokeColor="#838383"
               strokeWidth={3}
             />
 
@@ -237,7 +285,7 @@ const BusRoute = () => {
               <Polyline
                 coordinates={polylinePath}
                 strokeColor="#000000"
-                strokeWidth={7}
+                strokeWidth={3}
               />
             )}
           </MapView>
@@ -254,15 +302,17 @@ const BusRoute = () => {
               <Text style={styles.stopsText}>
                 {details?.stops.length} Stops
               </Text>
-              <Link
-                href={{
-                  pathname: "/route-schedule",
-                  params: { route },
-                }}
-                style={styles.link}
-              >
-                Schedule
-              </Link>
+              <View style={styles.linkWrapper}>
+                <Link
+                  href={{
+                    pathname: "/route-schedule",
+                    params: { route: initialRoute },
+                  }}
+                  style={styles.link}
+                >
+                  Schedule
+                </Link>
+              </View>
             </View>
             <View style={styles.stopsContainer}>
               {details?.stops.map((each: RouteStop, index: number) => {
@@ -292,6 +342,10 @@ const BusRoute = () => {
             </View>
           </View>
         </BottomSheetLayout>
+        <LoadingModal
+          isVisible={showModal}
+          text="Loading buses. Please wait..."
+        />
       </GestureHandlerRootView>
     </SafeAreaView>
   );
@@ -304,7 +358,6 @@ const { height } = Dimensions.get("window");
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    borderBottomWidth: 1,
   },
   map: {
     width: "100%",
@@ -317,11 +370,13 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     gap: 8,
     paddingVertical: 12,
-    zIndex: 1000,
+    paddingHorizontal: 20,
+    zIndex: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
+    overflow: "hidden",
   },
   container: {
     gap: 10,
@@ -333,9 +388,11 @@ const styles = StyleSheet.create({
   },
   nameContainer: {
     flexDirection: "row",
-    gap: 15,
+    gap: 10,
     justifyContent: "center",
     alignItems: "center",
+    overflow: "hidden",
+    paddingHorizontal: 20,
   },
   stopsText: {
     fontWeight: "700",
@@ -382,13 +439,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  link: {
-    fontSize: 14,
+  linkWrapper: {
     borderWidth: 2,
     borderColor: "#3fa1ae",
-    borderRadius: 500,
+    borderRadius: 20,
+    overflow: "hidden",
+    alignSelf: "flex-end",
+  },
+  link: {
+    fontSize: 14,
     paddingHorizontal: 20,
     paddingVertical: 3,
-    alignSelf: "flex-start",
   },
 });

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   LocationStore,
+  Option,
   RouteDetails,
   RouteOption,
   RouteOptionsStore,
@@ -37,10 +38,30 @@ export const useTransitRouteDetailsStore = create<TransitRouteStore>((set) => ({
 export const useRouteSearchedOptionsStore = create<RouteSearchedOptionsStore>(
   (set) => ({
     previousOptions: [],
-    setOption: async (option: RouteOption) => {
+    setOption: async ({
+      id,
+      long_name,
+      end,
+    }: {
+      id: string;
+      long_name: string;
+      end: string;
+    }) => {
       const storedOptions = await AsyncStorage.getItem("previous_routes");
       const parsedOptions = storedOptions ? JSON.parse(storedOptions) : [];
-      const updatedOptions = [option, ...parsedOptions];
+      const existingOptionIndex = parsedOptions.findIndex(
+        (existingOption: Option) => existingOption.id === id
+      );
+
+      let updatedOptions;
+
+      if (existingOptionIndex !== -1) {
+        parsedOptions[existingOptionIndex].count += 1;
+        updatedOptions = [...parsedOptions];
+      } else {
+        updatedOptions = [{ id, long_name, end, count: 1 }, ...parsedOptions];
+      }
+
       await AsyncStorage.setItem(
         "previous_routes",
         JSON.stringify(updatedOptions)
@@ -50,7 +71,11 @@ export const useRouteSearchedOptionsStore = create<RouteSearchedOptionsStore>(
     loadPreviousOptions: async () => {
       const storedOptions = await AsyncStorage.getItem("previous_routes");
       const parsedOptions = storedOptions ? JSON.parse(storedOptions) : [];
-      set({ previousOptions: parsedOptions });
+
+      const sortedOptions = parsedOptions.sort(
+        (a: Option, b: Option) => b.count - a.count
+      );
+      set({ previousOptions: sortedOptions });
     },
   })
 );
