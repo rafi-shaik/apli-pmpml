@@ -1,19 +1,21 @@
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 
-import { useLocationStore } from "@/store";
+import { useLocationStore, useRouteSearchedOptionsStore } from "@/store";
 import { ActivityIndicator, View } from "react-native";
 
 const Home = () => {
   const router = useRouter();
-  const { isLocationGranted, checkLocationAccess } =
-    useLocationStore();
+
+  const { loadPreviousOptions } = useRouteSearchedOptionsStore();
+  const { isLocationGranted, checkLocationAccess } = useLocationStore();
 
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
       await checkLocationAccess();
+      await loadPreviousOptions();
       setIsLoading(false);
     };
     loadData();

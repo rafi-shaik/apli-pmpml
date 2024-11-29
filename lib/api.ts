@@ -93,3 +93,29 @@ export const fetchTransitRouteDetails = async (route: string) => {
     throw error;
   }
 };
+
+export const fetchRouteOptions = async () => {
+  const url = `${process.env.EXPO_PUBLIC_ROUTES_API_BASE_URL}/routes`;
+
+  try {
+    const options = {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": "test",
+      },
+    };
+
+    const response = await fetch(url, options);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Request failed");
+    }
+
+    const res = await response.json();
+    return res.routes;
+  } catch (error: any) {
+    throw error;
+  }
+};

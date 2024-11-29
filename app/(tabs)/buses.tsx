@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import DeviceInfo from "react-native-device-info";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
+import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, useFocusEffect } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -32,7 +33,12 @@ import {
 import { icons } from "@/constants";
 import useDebounce from "@/lib/hooks/useDebounce";
 import { calculateDistance, trimRouteName } from "@/lib/utils";
-import { useLocationStore, useTransitRouteDetailsStore } from "@/store";
+import {
+  useLocationStore,
+  useRouteOptionsStore,
+  useRouteSearchedOptionsStore,
+  useTransitRouteDetailsStore,
+} from "@/store";
 import {
   fetchNearByBuses,
   fetchNearbyBusStops,
@@ -45,7 +51,201 @@ import GreenBusIcon from "@/components/svgs/GreenBusIcon";
 import WhiteBusIcon from "@/components/svgs/WhiteBusIcon";
 import BottomSheetLayout from "@/components/BottomSheetLayout";
 
-import { BusData, BusStop, RouteStop } from "@/types";
+import { BusData, BusStop, RouteOption, RouteStop } from "@/types";
+
+const mockOptions = [
+  {
+    agency: "PMPML",
+    city: "pun",
+    description: "168AUP",
+    direction: 1,
+    end: "Ghorpadi Post",
+    id: "10001",
+    long_name: "168AUP",
+    polyline:
+      "_q`pBw}waMsA_Bq@m@yBaBs@s@s@y@k@y@g@}@i@s@Y_@_@e@??aAwA]o@cAyBmA{BW[y@aAkA_A_@]w@cAU]cAkBe@aA_@aACMASRIJGl@u@Ve@To@v@cB??tDyIpByEz@kB??Zu@Vy@zBoFCgAY_CEICSAQTgDAc@??Cu@KyAaAuPCs@BsBICGGCCCI?EBK@EFGJAH?HDFFT?TBPBlB`@dB`@EL_@zC??cAfHrCX~@?bAIEmABm@p@iHE?CI?IBIBAHAHBDH?FlGhAdF`A|DoR??h@iCfB_ICKIK_HsBvAeDzAuD@GBA??DAB?BB@B?FEBE@wArD??uMuGIGGIGQi@sBWw@Sc@_A{AwAs@cC_AFmC??HaDGK@s@Bi@FkBBi@o@cBgBgF??cAwC_DkMEc@Ai@?kACw@I}AOw@OYWY",
+    route: "168A",
+    short_name: "nan",
+    start: "Shaniwarwada Stand",
+    trips_count: 85,
+    trips_schedule: [
+      "19:40",
+      "10:00",
+      "18:00",
+      "14:40",
+      "08:40",
+      "10:50",
+      "17:40",
+      "18:10",
+      "15:00",
+      "06:00",
+      "12:00",
+      "12:50",
+      "08:10",
+      "06:50",
+      "09:50",
+      "19:10",
+      "15:30",
+      "07:10",
+      "11:00",
+      "06:10",
+      "16:50",
+      "16:10",
+      "14:00",
+      "07:30",
+      "12:10",
+      "16:00",
+      "14:50",
+      "06:30",
+      "10:40",
+      "08:50",
+      "12:20",
+      "11:20",
+      "17:00",
+      "15:50",
+      "17:20",
+      "11:10",
+      "06:20",
+      "10:20",
+      "07:50",
+      "12:40",
+      "19:00",
+      "14:20",
+      "09:10",
+      "16:40",
+      "19:30",
+      "07:40",
+      "15:40",
+      "14:10",
+      "14:30",
+      "17:10",
+      "20:00",
+      "10:30",
+      "11:40",
+      "07:20",
+      "13:10",
+      "08:00",
+      "15:20",
+      "08:30",
+      "09:20",
+      "12:30",
+      "11:50",
+      "18:40",
+      "06:40",
+      "19:50",
+      "09:00",
+      "19:20",
+      "17:50",
+      "18:20",
+      "13:30",
+      "16:30",
+      "11:30",
+      "18:50",
+      "10:10",
+      "15:10",
+      "13:20",
+      "07:00",
+      "13:50",
+      "16:20",
+      "09:30",
+      "18:30",
+      "13:00",
+      "17:30",
+      "08:20",
+      "13:40",
+      "09:40",
+    ],
+  },
+  {
+    agency: "PMPML",
+    city: "pun",
+    description: "Metro Shuttle 20DOWN",
+    direction: 0,
+    end: "Ramwadi Metro Station",
+    id: "10000",
+    long_name: "Metro Shuttle 20DOWN",
+    polyline:
+      "akhpBohkbMh@U|Aq@hDAzAC??|HC~CGnCO`AKl@E??rDYtEa@rCi@cCyECMWsD?WHgFCe@Ca@@m@bAqH??DS`AVlElApCx@z@X~@h@BCBCDAD?DBBD@D?FCDCBE@G?eB~BCHAJ@^b@`BdAvDHh@AdBQ`BCh@Ar@Cf@Gd@CR}ASs@Ki@EoB?aADaAJmATkAR@b@??RvO??XdNVh@F@b@VZFnEn@ZJt@N??pMnCAh@??IhBDLAl@?RDZHFBL?JCHGFC@KBIAIEsBMoE[]A??kKGEBG@KAGAEECEgDl@??kLrB??qF`Ay@F}@Ra@L{GbC??[L}E|A{PdF[FWPa@b@??PNnBjBp@x@j@v@f@~@`D~HbApC^tARtABn@@`@Eh@M|@U~@??i@tBuAxE_@nAQbAGn@AfBPfH??NlFTrDr@rQTA??@NW@DfCVtJLtBLhA^bCLt@??`@xBPrAh@fDTnA~AtH@L@F??j@~C`@fClB|IVnAjCtJhDtNi@As@Ky@C??eDM??yDS]Eg@AwAGMzB??wArX??G`A~AJrKf@hBNh@@hA@tFKlBApDBLMJQ@KCSCMg@q@EMCQgA{A_AyAm@kA",
+    route: "METRO SHUTTLE 20",
+    short_name: "nan",
+    start: "International Tech Park Kharadi",
+    trips_count: 72,
+    trips_schedule: [
+      "15:10",
+      "16:50",
+      "11:10",
+      "11:30",
+      "09:30",
+      "17:40",
+      "12:40",
+      "12:20",
+      "14:30",
+      "06:30",
+      "10:40",
+      "17:30",
+      "07:20",
+      "07:00",
+      "11:50",
+      "09:40",
+      "17:20",
+      "07:40",
+      "09:00",
+      "07:30",
+      "13:20",
+      "11:20",
+      "14:50",
+      "15:30",
+      "07:50",
+      "08:30",
+      "10:30",
+      "12:10",
+      "06:40",
+      "14:40",
+      "15:00",
+      "13:00",
+      "07:10",
+      "08:20",
+      "08:10",
+      "15:20",
+      "06:10",
+      "16:40",
+      "16:20",
+      "12:00",
+      "10:00",
+      "13:50",
+      "16:00",
+      "09:10",
+      "08:50",
+      "14:00",
+      "15:50",
+      "06:50",
+      "16:10",
+      "09:50",
+      "13:30",
+      "10:50",
+      "06:00",
+      "14:10",
+      "15:40",
+      "09:20",
+      "11:40",
+      "11:00",
+      "13:40",
+      "17:00",
+      "16:30",
+      "14:20",
+      "17:10",
+      "10:10",
+      "12:30",
+      "08:00",
+      "17:50",
+      "08:40",
+      "13:10",
+      "10:20",
+      "06:20",
+      "12:50",
+    ],
+  },
+];
 
 const BusesPage = () => {
   const { location } = useLocationStore();
@@ -58,13 +258,17 @@ const BusesPage = () => {
     longitudeDelta: 0.0421,
   };
 
+  const { routeOptions } = useRouteOptionsStore();
   const { setRouteDetails } = useTransitRouteDetailsStore();
+  const { previousOptions } = useRouteSearchedOptionsStore();
 
   const [routeInput, setRouteInput] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [region, setRegion] = useState(initialRegion);
   const [isInputFocused, setIsInputFocused] = useState(false);
-  const [selectedBus, setSelectedBus] = useState<BusData | undefined>();
+  const [selectedBusRoute, setSelectedBusRoute] = useState<
+    string | undefined
+  >();
   const [selectedBusStop, setSelectedBusStop] = useState<BusStop | undefined>();
   const [selectedMarkerType, setSelectedMarkerType] = useState<
     "bus" | "bus-stop" | undefined
@@ -113,21 +317,16 @@ const BusesPage = () => {
   });
 
   const { data: routeDetails, isLoading: isRouteDetailsLoading } = useQuery({
-    queryKey: ["route-details", selectedBus],
-    queryFn: () => fetchTransitRouteDetails(selectedBus?.route!),
-    enabled: !!selectedBus,
+    queryKey: ["route-details", selectedBusRoute],
+    queryFn: () => fetchTransitRouteDetails(selectedBusRoute!),
+    enabled: !!selectedBusRoute,
     retry: false,
   });
-
-  const textsArray = Array.from({ length: 100 }, (_, index) => ({
-    id: index,
-    text: "Mock string",
-  }));
 
   useFocusEffect(
     useCallback(() => {
       setIsFocused(true);
-      mapRef?.current!.animateToRegion(initialRegion, 1000);
+      mapRef?.current?.animateToRegion(initialRegion, 1000);
       setRegion(initialRegion);
 
       return () => {
@@ -317,11 +516,23 @@ const BusesPage = () => {
 
           {isInputFocused && (
             <View style={styles.list}>
-              <FlatList
-                data={textsArray}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={(itemData) => <Text>{itemData.item.text}</Text>}
-              />
+              {routeInput === "" ? (
+                <FlatList
+                  data={mockOptions}
+                  keyExtractor={(item) => item.id.toString()}
+                  renderItem={(itemData) => (
+                    <PreviousOption option={itemData.item} />
+                  )}
+                />
+              ) : (
+                <FlatList
+                  data={mockOptions}
+                  keyExtractor={(item) => item.id.toString()}
+                  renderItem={(itemData) => (
+                    <PreviousOption option={itemData.item} />
+                  )}
+                />
+              )}
             </View>
           )}
 
@@ -335,45 +546,47 @@ const BusesPage = () => {
                   <ActivityIndicator size="large" />
                 </View>
               )}
-              {selectedMarkerType === "bus" && selectedBus && routeDetails && (
-                <>
-                  <View style={styles.busHeader}>
-                    <BusIcon color="#219653" />
-                    <Text style={styles.busTitle}>
-                      {trimRouteName(selectedBus?.route!)} -{" "}
-                      {routeDetails?.[0]?.stops?.at(-1)?.name}
-                    </Text>
-                  </View>
-                  <Text style={styles.busId}>{selectedBus?.id!}</Text>
+              {selectedMarkerType === "bus" &&
+                selectedBusRoute &&
+                routeDetails && (
+                  <>
+                    <View style={styles.busHeader}>
+                      <BusIcon color="#219653" />
+                      <Text style={styles.busTitle}>
+                        {trimRouteName(selectedBusRoute)} -{" "}
+                        {routeDetails?.[0]?.stops?.at(-1)?.name}
+                      </Text>
+                    </View>
+                    <Text style={styles.busId}>{selectedBusRoute}</Text>
 
-                  <Link
-                    href={{
-                      pathname: "/bus-route",
-                      params: { route: selectedBus?.route },
-                    }}
-                    style={styles.link}
-                  >
-                    Route
-                  </Link>
+                    <Link
+                      href={{
+                        pathname: "/bus-route",
+                        params: { route: selectedBusRoute },
+                      }}
+                      style={styles.link}
+                    >
+                      Route
+                    </Link>
 
-                  <View style={styles.stopsHeader}>
-                    <Text style={styles.text}>Stop name</Text>
-                    <Text style={styles.text}>Expected Time</Text>
-                  </View>
+                    <View style={styles.stopsHeader}>
+                      <Text style={styles.text}>Stop name</Text>
+                      <Text style={styles.text}>Expected Time</Text>
+                    </View>
 
-                  {routeDetails[0].stops.map(
-                    (each: RouteStop, index: number) => (
-                      <View
-                        key={`${each.name}_${index}`}
-                        style={styles.stopRow}
-                      >
-                        <Text>{each.name}</Text>
-                        <Text>{each.stop_id}</Text>
-                      </View>
-                    )
-                  )}
-                </>
-              )}
+                    {routeDetails[0].stops.map(
+                      (each: RouteStop, index: number) => (
+                        <View
+                          key={`${each.name}_${index}`}
+                          style={styles.stopRow}
+                        >
+                          <Text>{each.name}</Text>
+                          <Text>{each.stop_id}</Text>
+                        </View>
+                      )
+                    )}
+                  </>
+                )}
 
               {selectedMarkerType === "bus-stop" && selectedBusStop && (
                 <>
@@ -461,7 +674,7 @@ const styles = StyleSheet.create({
   },
   list: {
     position: "relative",
-    top: 120,
+    top: 100,
     paddingHorizontal: 20,
   },
   indicatorStyle: {
@@ -519,4 +732,40 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flex: 1,
   },
+  previousOptionContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 15,
+    marginBottom: 20,
+  },
+  previousRouteName: {
+    fontSize: 17,
+  },
+  previousEndText: {
+    fontSize: 16,
+    color: "#838383",
+  },
 });
+
+const PreviousOption = ({ option }: { option: RouteOption }) => {
+  const { end, long_name } = option;
+
+  return (
+    <Link
+      href={{
+        pathname: "/bus-route",
+        params: { route: long_name },
+      }}
+    >
+      <View style={styles.previousOptionContainer}>
+        <FontAwesome6 name="clock-rotate-left" size={22} color="#838383" />
+        <View style={{ gap: 3 }}>
+          <Text style={styles.previousRouteName}>
+            {trimRouteName(option.long_name)}
+          </Text>
+          <Text style={styles.previousEndText}>Towards {end}</Text>
+        </View>
+      </View>
+    </Link>
+  );
+};

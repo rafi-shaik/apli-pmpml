@@ -59,3 +59,30 @@ export interface FAQSection {
   title: string;
   items: FAQItem[];
 }
+
+export interface RouteOption {
+  agency: string;
+  city: string;
+  description: string;
+  direction: number;
+  end: string;
+  id: string;
+  long_name: string;
+  polyline: string;
+  route: string;
+  short_name: string;
+  start: string;
+  trips_count: number;
+  trips_schedule: string[];
+}
+
+export interface RouteSearchedOptionsStore {
+  previousOptions: RouteOption[];
+  setOption: (option: RouteOption) => Promise<void>;
+  loadPreviousOptions: () => Promise<void>;
+}
+
+export interface RouteOptionsStore {
+  routeOptions: RouteOption[];
+  setRouteOptions: (options: RouteOption[]) => void;
+}

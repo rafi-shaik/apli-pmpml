@@ -7,10 +7,10 @@ import React, { useCallback, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { BusData } from "@/types";
-import { useLocationStore } from "@/store";
+import { useLocationStore, useRouteOptionsStore } from "@/store";
 import { icons, images } from "@/constants";
 import { trimRouteName } from "@/lib/utils";
-import { fetchNearByBuses } from "@/lib/api";
+import { fetchNearByBuses, fetchRouteOptions } from "@/lib/api";
 
 import IconCard from "@/components/IconCard";
 import GreenBusIcon from "@/components/svgs/GreenBusIcon";
@@ -18,6 +18,8 @@ import WhiteBusIcon from "@/components/svgs/WhiteBusIcon";
 
 const HomePage = () => {
   const { setLocation, location } = useLocationStore();
+  const { routeOptions, setRouteOptions } = useRouteOptionsStore();
+
   const [isFocused, setIsFocused] = useState(false);
 
   const getCurrentLocation = async () => {
@@ -37,6 +39,14 @@ const HomePage = () => {
     retry: false,
   });
 
+  const shouldFetchRouteOptions = routeOptions.length === 0;
+  const { data: routes } = useQuery({
+    queryKey: ["route-options"],
+    queryFn: () => fetchRouteOptions(),
+    enabled: shouldFetchRouteOptions,
+    retry: false,
+  });
+
   useFocusEffect(
     useCallback(() => {
       setIsFocused(true);
@@ -50,6 +60,12 @@ const HomePage = () => {
   useEffect(() => {
     getCurrentLocation();
   }, []);
+
+  useEffect(() => {
+    if (routes) {
+      setRouteOptions(routes);
+    }
+  }, [routes]);
 
   const renderBusMarkers = () => {
     return buses?.map((bus: BusData) => {
