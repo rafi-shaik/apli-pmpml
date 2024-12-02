@@ -3,14 +3,14 @@ import { fetchFunction } from "./utils";
 export const fetchNearByBuses = async (
   lat: number,
   lon: number,
-  device_id?: any
+  device_id?: string
 ) => {
   const url = `${process.env.EXPO_PUBLIC_API_BASE_URL}/nearby-buses`;
 
   const options = {
     method: "POST",
     body: JSON.stringify({
-      device_id: "unique_id",
+      device_id,
       lat,
       lon,
     }),

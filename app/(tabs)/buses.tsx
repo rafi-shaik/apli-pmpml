@@ -1,7 +1,6 @@
 import Toast from "react-native-root-toast";
 import BottomSheet from "@gorhom/bottom-sheet";
 import { useQuery } from "@tanstack/react-query";
-import DeviceInfo from "react-native-device-info";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
@@ -45,6 +44,7 @@ import {
   fetchRouteOptions,
   fetchTransitRouteDetails,
 } from "@/lib/api";
+import useDeviceInfo from "@/lib/hooks/useDeviceInfo";
 
 import BusIcon from "@/components/svgs/BusIcon";
 import LoadingModal from "@/components/LoadingModal";
@@ -54,10 +54,8 @@ import GreenBusIcon from "@/components/svgs/GreenBusIcon";
 import WhiteBusIcon from "@/components/svgs/WhiteBusIcon";
 import BottomSheetLayout from "@/components/BottomSheetLayout";
 
-
 const BusesPage = () => {
   const { location } = useLocationStore();
-  // const [deviceId, setDeviceId] = useState("");
 
   const initialRegion = {
     latitude: location?.latitude!,
@@ -90,23 +88,11 @@ const BusesPage = () => {
 
   const snapPoints = useMemo(() => ["50%", "97%"], []);
 
+  const deviceId = useDeviceInfo();
   const debouncedSearch = useDebounce(routeInput);
 
-  // useFocusEffect(() => {
-  //   const getDeviceId = async () => {
-  //     try {
-  //       const id = await DeviceInfo.getUniqueId();
-  //       setDeviceId(id);
-  //     } catch (error) {
-  //       console.error("Error getting device ID:", error);
-  //     }
-  //   };
-
-  //   getDeviceId();
-  // });
-
   const shouldFetch =
-    Boolean(region?.latitude && region?.longitude) && isFocused;
+    Boolean(region?.latitude && region?.longitude && deviceId) && isFocused;
 
   const {
     data: buses,
@@ -114,7 +100,8 @@ const BusesPage = () => {
     isLoading: busesLoading,
   } = useQuery({
     queryKey: ["nearby-buses-data", region?.latitude, region?.longitude],
-    queryFn: () => fetchNearByBuses(region?.latitude!, region?.longitude!),
+    queryFn: () =>
+      fetchNearByBuses(region?.latitude!, region?.longitude!, deviceId),
     enabled: shouldFetch,
     retry: false,
     refetchInterval: 5000,
@@ -160,9 +147,22 @@ const BusesPage = () => {
     if (debouncedSearch === "") {
       setFilteredOptions([]);
     } else if (routeOptions) {
-      const filteredOptions = routeOptions.filter((route: RouteOption) =>
-        route.long_name.startsWith(debouncedSearch)
-      );
+      const filteredOptions = routeOptions
+        .filter((route: RouteOption) =>
+          route.long_name.startsWith(debouncedSearch)
+        )
+        .sort((a: RouteOption, b: RouteOption) => {
+          const aMatch = a.long_name.match(/^(\d+)/);
+          const bMatch = b.long_name.match(/^(\d+)/);
+
+          if (aMatch && bMatch) {
+            const aNum = parseInt(aMatch[1], 10);
+            const bNum = parseInt(bMatch[1], 10);
+            return aNum - bNum;
+          }
+
+          return a.long_name.localeCompare(b.long_name);
+        });
       setFilteredOptions(filteredOptions);
     }
   }, [debouncedSearch, routeOptions]);
@@ -181,7 +181,7 @@ const BusesPage = () => {
     if (error) {
       Toast.show("No buses available at this time. Please try again.", {
         duration: Toast.durations.SHORT,
-        position: -70,
+        position: -80,
         backgroundColor: "#000000B3",
         textColor: "#fff",
       });
@@ -272,10 +272,15 @@ const BusesPage = () => {
     ));
   };
 
-  const handleBlur = () => {
+  const handleFocus = useCallback(() => {
+    bottomSheetRef.current?.close();
+    setIsInputFocused(true);
+  }, []);
+
+  const handleBlur = useCallback(() => {
     inputRef.current?.blur();
     setIsInputFocused(false);
-  };
+  }, []);
 
   const handleRegionChange = (newRegion: Region) => {
     const distance = calculateDistance(
@@ -292,7 +297,7 @@ const BusesPage = () => {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <GestureHandlerRootView>
+      <GestureHandlerRootView style={{ flex: 1 }}>
         <View style={styles.root}>
           {!isInputFocused && (
             <>
@@ -340,7 +345,7 @@ const BusesPage = () => {
               placeholder="Enter Route"
               placeholderTextColor="#666"
               onChangeText={setRouteInput}
-              onFocus={() => setIsInputFocused(true)}
+              onFocus={handleFocus}
             />
             {routeInput && (
               <Pressable onPress={() => setRouteInput("")}>
@@ -350,7 +355,7 @@ const BusesPage = () => {
           </View>
 
           {isInputFocused && (
-            <View style={styles.list}>
+            <View style={styles.listContainer}>
               {routeInput === "" ? (
                 <FlatList
                   data={previousOptions}
@@ -358,6 +363,7 @@ const BusesPage = () => {
                   renderItem={(itemData) => (
                     <PreviousOption option={itemData.item} />
                   )}
+                  contentContainerStyle={styles.list}
                 />
               ) : (
                 <FlatList
@@ -366,6 +372,7 @@ const BusesPage = () => {
                   renderItem={(itemData) => (
                     <CurrentOption option={itemData.item} />
                   )}
+                  contentContainerStyle={styles.list}
                 />
               )}
             </View>
@@ -430,9 +437,8 @@ const BusesPage = () => {
                   <View style={styles.busHeader}>
                     <BusStopIcon />
                     <Text style={styles.busTitle}>
-                      Towards:{" "}
-                      {selectedBusStop.name?.length > 20
-                        ? `${selectedBusStop.name.slice(0, 20)}...`
+                      {selectedBusStop.name?.length > 40
+                        ? `${selectedBusStop.name.slice(0, 30)}...`
                         : selectedBusStop.name}
                     </Text>
                   </View>
@@ -484,8 +490,9 @@ const styles = StyleSheet.create({
     elevation: 5,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.2,
     shadowRadius: 4,
+    zIndex: 10,
   },
   searchIcon: {
     width: "12%",
@@ -513,10 +520,16 @@ const styles = StyleSheet.create({
     width: 21,
     height: 21,
   },
+  listContainer: {
+    position: "absolute",
+    top: 80,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
   list: {
-    paddingTop: 80,
-    paddingBottom: 50,
     paddingHorizontal: 20,
+    paddingBottom: 50,
   },
   indicatorStyle: {
     backgroundColor: "#cccccc",

@@ -1,8 +1,6 @@
 import React from "react";
 import { Tabs } from "expo-router";
-import { Image } from "react-native";
 
-import { images } from "@/constants";
 import TabBar from "@/components/TabBar";
 
 export default function TabLayout() {
@@ -12,10 +10,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
-          headerTitle: "",
-          headerLeft: () => (
-            <Image source={images.pmpml} style={{ width: 62, height: 62 }} />
-          ),
+          headerShown: false,
         }}
       />
 

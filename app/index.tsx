@@ -1,8 +1,8 @@
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
+import { ActivityIndicator, View } from "react-native";
 
 import { useLocationStore, useRouteSearchedOptionsStore } from "@/store";
-import { ActivityIndicator, View } from "react-native";
 
 const Home = () => {
   const router = useRouter();

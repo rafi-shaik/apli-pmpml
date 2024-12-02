@@ -11,7 +11,7 @@ export interface LocationStore {
 
 export interface TransitRouteStore {
   details: RouteDetails | null;
-  setRouteDetails: (details: RouteDetails) => void;
+  setRouteDetails: (details: RouteDetails | null) => void;
 }
 
 export interface RouteStop {

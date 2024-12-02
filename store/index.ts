@@ -31,7 +31,7 @@ export const useLocationStore = create<LocationStore>((set) => ({
 
 export const useTransitRouteDetailsStore = create<TransitRouteStore>((set) => ({
   details: null,
-  setRouteDetails: (route_details: RouteDetails) =>
+  setRouteDetails: (route_details: RouteDetails | null) =>
     set({ details: route_details }),
 }));
 
@@ -61,6 +61,8 @@ export const useRouteSearchedOptionsStore = create<RouteSearchedOptionsStore>(
       } else {
         updatedOptions = [{ id, long_name, end, count: 1 }, ...parsedOptions];
       }
+
+      updatedOptions.sort((a, b) => b.count - a.count);
 
       await AsyncStorage.setItem(
         "previous_routes",

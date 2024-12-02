@@ -139,14 +139,12 @@ const BusRoute = () => {
             longitude: stop.lon,
           }}
           tracksViewChanges={false}
-          ref={markerRefs?.current[stop.stop_id]}
-          anchor={{ x: 0.5, y: 0.5 }}
-          calloutAnchor={{ x: 0.5, y: 0 }}
+          ref={markerRefs.current[stop.stop_id]}
         >
           <BusStopIcon />
-          <Callout style={{ width: "100%", height: "100%" }}>
+          <Callout>
             <View>
-              <Text style={{ fontSize: 14 }}>{stop.name}</Text>
+              <Text style={{ width: "100%", height: 20 }}>{stop.name}</Text>
             </View>
           </Callout>
         </Marker>
@@ -179,7 +177,7 @@ const BusRoute = () => {
 
   const handleStopClick = (stop: RouteStop) => {
     setSelectedStop(stop);
-    mapRef?.current?.animateToRegion(
+    mapRef.current?.animateToRegion(
       {
         latitude: stop.lat,
         longitude: stop.lon,
@@ -189,8 +187,9 @@ const BusRoute = () => {
       1000
     );
     const markerRef = markerRefs.current[stop.stop_id];
+
     if (markerRef) {
-      markerRef?.current?.showCallout();
+      markerRef.current?.showCallout();
     }
     bottomSheetRef.current?.snapToIndex(0);
   };
@@ -208,8 +207,8 @@ const BusRoute = () => {
   };
 
   return (
-    <SafeAreaView style={styles.root}>
-      <GestureHandlerRootView>
+    <SafeAreaView style={{ flex: 1 }} edges={["top", "left", "right"]}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
         <View style={styles.root}>
           <View style={styles.topBar}>
             <View
@@ -219,7 +218,10 @@ const BusRoute = () => {
               }}
             >
               <Pressable
-                onPress={() => router.back()}
+                onPress={() => {
+                  setRouteDetails(null);
+                  router.replace("/(tabs)/buses");
+                }}
                 style={{
                   width: "12%",
                 }}
@@ -277,20 +279,19 @@ const BusRoute = () => {
 
             <Polyline
               coordinates={coordinates}
-              strokeColor="#838383"
+              strokeColor="#000"
               strokeWidth={3}
             />
 
-            {polylinePath.length > 0 && (
+            {/* {polylinePath.length > 0 && (
               <Polyline
                 coordinates={polylinePath}
                 strokeColor="#000000"
                 strokeWidth={3}
               />
-            )}
+            )} */}
           </MapView>
         </View>
-
         <BottomSheetLayout
           index={0}
           snapPoints={snapPoints}
@@ -364,8 +365,6 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   topBar: {
-    position: "absolute",
-    top: 0,
     width: "100%",
     backgroundColor: "white",
     gap: 8,
@@ -376,14 +375,13 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    overflow: "hidden",
   },
   container: {
     gap: 10,
     paddingTop: 5,
     paddingHorizontal: 25,
     paddingBottom: 40,
-    minHeight: 0.1 * height,
+    // minHeight: 0.1 * height,
     flex: 1,
   },
   nameContainer: {
@@ -438,6 +436,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    marginBottom: 10,
   },
   linkWrapper: {
     borderWidth: 2,
@@ -450,5 +449,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     paddingHorizontal: 20,
     paddingVertical: 3,
+  },
+  calloutContainer: {
+    backgroundColor: "white",
+    borderRadius: 6,
+    padding: 8,
+    maxWidth: 200,
+  },
+  calloutText: {
+    fontSize: 14,
   },
 });

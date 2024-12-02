@@ -4,24 +4,27 @@ import { useQuery } from "@tanstack/react-query";
 import MapView, { Marker } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
 import React, { useCallback, useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { BusData } from "@/types";
-import { useLocationStore } from "@/store";
 import { icons, images } from "@/constants";
 import { trimRouteName } from "@/lib/utils";
 import { fetchNearByBuses } from "@/lib/api";
+import { useLocationStore } from "@/store";
+import useDeviceInfo from "@/lib/hooks/useDeviceInfo";
 
 import IconCard from "@/components/IconCard";
+import LoadingModal from "@/components/LoadingModal";
 import GreenBusIcon from "@/components/svgs/GreenBusIcon";
 import WhiteBusIcon from "@/components/svgs/WhiteBusIcon";
-import LoadingModal from "@/components/LoadingModal";
 
 const HomePage = () => {
   const { setLocation, location } = useLocationStore();
 
-  const [isFocused, setIsFocused] = useState(false);
+  const deviceId = useDeviceInfo();
+
   const [showModal, setShowModal] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   const getCurrentLocation = async () => {
     let { coords } = await Location.getCurrentPositionAsync();
@@ -30,11 +33,12 @@ const HomePage = () => {
   };
 
   const shouldFetch =
-    Boolean(location?.latitude && location?.longitude) && isFocused;
+    Boolean(location?.latitude && location?.longitude && deviceId) && isFocused;
 
   const { data: buses, isLoading } = useQuery({
     queryKey: ["nearby-buses-data", location?.latitude, location?.longitude],
-    queryFn: () => fetchNearByBuses(location?.latitude!, location?.longitude!),
+    queryFn: () =>
+      fetchNearByBuses(location?.latitude!, location?.longitude!, deviceId),
     enabled: shouldFetch,
     refetchInterval: 5000,
     retry: false,
@@ -84,7 +88,16 @@ const HomePage = () => {
 
   return (
     <SafeAreaView style={styles.root}>
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+      <View style={styles.header}>
+        <Image source={images.pmpml} style={{ width: 62, height: 60 }} />
+      </View>
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingHorizontal: 15,
+          paddingTop: 15,
+        }}
+      >
         <View style={styles.cardContainer}>
           <IconCard icon={icons.blackTicket} label="Bus Ticket" />
           <IconCard icon={icons.idCard} label="Daily Pass" />
@@ -133,7 +146,9 @@ export default HomePage;
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    paddingHorizontal: 15,
+  },
+  header: {
+    backgroundColor: "white",
   },
   cardContainer: {
     flexDirection: "row",
