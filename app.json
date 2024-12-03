@@ -16,7 +16,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.apliPMPML.chartr",
       "config": {
-        "googleMapsApiKey": "AIzaSyBnOuJVG543GQSzTpJ-W6L_8iN6nyj-Mcs"
+        "googleMapsApiKey": "${process.env.GOOGLE_MAPS_API_KEY}"
       }
     },
     "android": {
@@ -31,7 +31,7 @@
       "package": "com.apliPMPML.chartr",
       "config": {
         "googleMaps": {
-          "apiKey": "AIzaSyBnOuJVG543GQSzTpJ-W6L_8iN6nyj-Mcs"
+          "apiKey": "${process.env.GOOGLE_MAPS_API_KEY}"
         }
       }
     },
