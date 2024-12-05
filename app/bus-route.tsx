@@ -12,7 +12,7 @@ import MapView, {
   MapMarker,
   Marker,
   Polyline,
-  PROVIDER_GOOGLE,
+  PROVIDER_DEFAULT,
 } from "react-native-maps";
 
 import { trimRouteName } from "@/lib/utils";
@@ -267,7 +267,7 @@ const BusRoute = () => {
             </View>
           </View>
           <MapView
-            provider={PROVIDER_GOOGLE}
+            provider={PROVIDER_DEFAULT}
             ref={mapRef}
             style={styles.map}
             showsUserLocation={true}

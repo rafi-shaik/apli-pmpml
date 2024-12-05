@@ -1,7 +1,7 @@
 import * as Location from "expo-location";
 import { useFocusEffect } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
 import React, { useCallback, useEffect, useState } from "react";
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -113,7 +113,7 @@ const HomePage = () => {
           <Text style={styles.mapHeading}>Nearby</Text>
           {location && (
             <MapView
-              provider={PROVIDER_GOOGLE}
+              provider={PROVIDER_DEFAULT}
               style={styles.map}
               zoomEnabled={false}
               scrollEnabled={false}
