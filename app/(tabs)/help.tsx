@@ -8,11 +8,9 @@ import {
 } from "react-native";
 import React, { useState } from "react";
 import CustomButton from "@/components/CustomButton";
-import { SafeAreaView } from "react-native-safe-area-context";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { FAQSection } from "@/types";
 
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const TAB_BAR_HEIGHT = 60;
 const BUTTON_CONTAINER_HEIGHT = 100;
 
@@ -151,7 +149,7 @@ const FAQItem = ({
 
 const ComplaintsPage = () => {
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -185,7 +183,7 @@ const ComplaintsPage = () => {
           Raise New Complaint
         </CustomButton>
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -196,6 +194,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "white",
     paddingHorizontal: 15,
+    paddingTop: 10,
   },
   scrollView: {
     flex: 1,
@@ -231,7 +230,6 @@ const styles = StyleSheet.create({
     paddingRight: 30,
     lineHeight: 20,
   },
-
   questionText: {
     fontSize: 17,
     color: "black",
